@@ -47,9 +47,10 @@ function renderItems() {
   if (!items.length) { emptyHint.style.display = "block"; return; }
   emptyHint.style.display = "none";
   items.forEach((it, idx) => {
+    console.log("Item recebido:", JSON.stringify(it, null, 2));
     const row = document.createElement("div"); row.className="item-row";
     const title = document.createElement("div");
-    title.innerHTML = `<div class="item-title">${it.product_catalog?.descricao ?? it.product_id} - ${it.product_catalog.descricao}</div>
+    title.innerHTML = `<div class="item-title">${it.product_catalog?.descricao ?? it.product_id}</div>
                        <div class="item-meta">${it.product_catalog?.referencia ?? ""}</div>`;
     const qty = document.createElement("input");
     qty.type = "number"; qty.min="0"; qty.value = String(it.qty ?? 0); qty.className="qty-input";
