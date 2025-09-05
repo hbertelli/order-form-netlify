@@ -34,23 +34,27 @@ function isPromoActive(p){
   return true;
 }
 
+function toDecimal(v) {
+  if (v == null) return NaN;
+  if (typeof v === "number") return v;
+  const s = String(v).replace(/\s+/g, "").replace(",", ".");
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : NaN;
+}
+
 
 function computeUnitPrice(p){
   if (!p) return null;
-  const tabela = 3;                      // mantém tabela 3
-  const precoKey = `preco${tabela}`;
-  const promoKey = `promo${tabela}`;
-  const base  = Number(p[precoKey] ?? 0);
-  const promo = Number(p[promoKey] ?? 0);
+  const tabela = 3; // mude se quiser 1..6
+  const base  = toDecimal(p[`preco${tabela}`]);
+  const promo = toDecimal(p[`promo${tabela}`]);
 
-  // usa sempre o menor entre preco3 e promo3; se promo3 for 0/NaN, o min fica no preco3
-  const val = Math.min(
-    Number.isFinite(base)  ? base  : Infinity,
-    Number.isFinite(promo) && promo > 0 ? promo : Infinity
-  );
-
-  return Number.isFinite(val) ? val : null;
+  // menor válido entre os dois; se promo for 0/NaN, fica o base
+  const candidates = [base, promo].filter(Number.isFinite);
+  if (!candidates.length) return null;
+  return Math.min(...candidates);
 }
+
 
 
 async function loadSession() {
@@ -101,12 +105,18 @@ async function loadItems() {
   // 3) “Enriquece” os itens com o produto
   items = arr.map(it => {
     const p = byId.get(it.product_id) || null;
-    return {
-      ...it,
-      produto: p,
-      unit_price: computeUnitPrice(p)
-    };
-  });
+    const unit_price = computeUnitPrice(p);
+    // LOG útil para depurar discrepâncias:
+    console.log("Preço calc:", {
+      product_id: it.product_id,
+      descricao: p?.descricao,
+      preco3: p?.preco3,
+      promo3: p?.promo3,
+      unit_price
+    });
+    return { ...it, produto: p, unit_price };
+});
+
 }
 
 function renderItems() {
