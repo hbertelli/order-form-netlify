@@ -1,22 +1,19 @@
-/* ====== Base / tipografia ====== */
 :root{
   --gap:10px; --pad:12px; --radius:12px;
   --border:#e5e7eb; --muted:#6b7280; --ink:#111827;
 }
-html,body{color:var(--ink);}
 h1{font-size:clamp(20px,4.5vw,28px);margin:.25rem 0 .5rem;}
 #session-info{font-size:.92rem;color:var(--muted);margin-bottom:.75rem;}
-
 #items-list{display:grid;gap:12px;}
 
-/* ====== Card do item (mobile-first) ====== */
+/* CARD (mobile-first) */
 .item-row{
   display:grid;
   grid-template-areas:
-    "title  price"
-    "qty    remove";
+    "title   price"
+    "qty     subtotal"
+    "remove  remove";
   grid-template-columns: 1fr auto;
-  align-items:center;
   column-gap:14px; row-gap:8px;
   padding:var(--pad);
   border:1px solid var(--border);
@@ -25,20 +22,10 @@ h1{font-size:clamp(20px,4.5vw,28px);margin:.25rem 0 .5rem;}
   box-shadow:0 1px 2px rgba(16,24,40,.04);
 }
 
-/* header: título + meta (código/gtin) */
 .item-title-wrap{ grid-area:title; min-width:0; }
 .item-title{ font-weight:600; line-height:1.25; }
 .item-meta{ font-size:.82rem; color:var(--muted); margin-top:2px; }
 
-/* qty */
-.qty-input{
-  grid-area:qty;
-  width:88px; height:40px;
-  padding:6px 10px; font-size:16px; /* evita zoom no iOS */
-  border:1px solid var(--border); border-radius:10px; background:#fff;
-}
-
-/* preço (sempre à direita) */
 .item-price{
   grid-area:price;
   font-weight:700;
@@ -46,68 +33,43 @@ h1{font-size:clamp(20px,4.5vw,28px);margin:.25rem 0 .5rem;}
   text-align:right;
 }
 
-/* botão remover: “ghost” pequeno, na mesma linha do qty */
+.qty-input{
+  grid-area:qty;
+  width:92px; height:40px;
+  padding:6px 10px; font-size:16px;      /* evita zoom no iOS */
+  border:1px solid var(--border); border-radius:10px; background:#fff;
+}
+
+.item-subtotal{
+  grid-area:subtotal;
+  justify-self:end;
+  font-weight:600;
+  min-width:96px;
+  text-align:right;
+  color:#111827;
+}
+
 .btn-remove{
   grid-area:remove;
   justify-self:end;
-  height:40px; padding:0 10px;
+  height:40px; padding:0 12px;
   background:transparent; color:#ef4444;
   border:1px solid var(--border); border-radius:10px;
 }
 .btn-remove:hover{ background:#fff1f1; }
 
-/* ====== Telas médias: distribui em 1 linha ====== */
+/* ≥520px: uma linha compacta */
 @media (min-width:520px){
   .item-row{
     grid-template-areas: "title qty price remove";
-    grid-template-columns: 1fr 110px auto 120px;
+    grid-template-columns: 1fr 110px 120px 120px;
     row-gap:6px;
   }
+  .item-subtotal{ display:none; }       /* some no desktop se quiser */
   .qty-input{ width:104px; }
 }
 
-/* ====== Telas maiores: um pouco mais de respiro ====== */
+/* ≥768px: mais respiro */
 @media (min-width:768px){
   .item-row{ grid-template-columns: 1fr 116px 140px 130px; }
-}
-
-/* opcional: cortar títulos longos em uma linha */
-/* .item-title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } */
-
-/* espaço para não ficar escondido atrás do footer fixo */
-body{ padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
-
-/* Footer fixo */
-#cart-footer{
-  position: fixed; left:0; right:0; bottom:0; z-index: 50;
-  background:#fff; border-top:1px solid var(--border);
-  box-shadow: 0 -8px 16px rgba(16,24,40,.06);
-}
-
-#cart-footer .footer-inner{
-  max-width: 960px; margin:0 auto;
-  display:flex; align-items:center; gap:12px; justify-content:space-between;
-  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-}
-
-.footer-total{ font-weight:700; color:var(--brand-ink); font-size:1.05rem; }
-.footer-actions{ display:flex; gap:10px; }
-
-.btn-primary{
-  background: var(--brand); color:#fff; border:none;
-  height:42px; padding:0 14px; border-radius:12px; cursor:pointer;
-}
-.btn-primary:hover{ filter:brightness(0.95); }
-
-.btn-secondary{
-  background:transparent; color:var(--brand-ink);
-  border:1px solid var(--border);
-  height:42px; padding:0 12px; border-radius:12px; cursor:pointer;
-}
-
-/* telas pequenas: empilha total acima dos botões */
-@media (max-width:420px){
-  #cart-footer .footer-inner{ flex-direction:column; align-items:stretch; }
-  .footer-actions{ width:100%; }
-  .footer-actions > button{ flex:1; }
 }
