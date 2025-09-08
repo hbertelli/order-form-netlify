@@ -17,8 +17,14 @@ if (!token) { document.body.innerHTML = "Link inválido: token ausente."; throw 
 
 const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
   db: { schema: "demo" },
-  global: { headers: { Authorization: `Bearer ${token}` } }
+  global: {
+    headers: {
+      apikey: cfg.SUPABASE_ANON,
+      Authorization: `Bearer ${token}`,
+    },
+  },
 });
+
 
 let session = null;
 let items   = [];
