@@ -46,7 +46,9 @@ function computeUnitPrice(p){
   return Math.min(...cands);
 }
 
-function formatBRL(n){ return (n==null) ? "-" : n.toLocaleString("pt-BR", { style:"currency", currency:"BRL" }); }
+function formatBRL(n){
+  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
+}
 function lineTotal(it){ return (it?.unit_price!=null) ? (it.unit_price * (it.qty||0)) : null; }
 function grandTotal(){ return items.reduce((acc, it) => acc + ((it.unit_price ?? 0) * (it.qty ?? 0)), 0); }
 
@@ -112,87 +114,60 @@ async function loadItems(){
 /* ---------- render ---------- */
 function renderItems(){
   itemsList.innerHTML = "";
-  if (!items.length){ 
-    emptyHint.style.display = "block"; 
-    updateFooterTotal?.(); 
-    return; 
-  }
+  if (!items.length){ emptyHint.style.display = "block"; return; }
   emptyHint.style.display = "none";
 
   items.forEach((it, idx) => {
     const row = document.createElement("div");
     row.className = "item-row";
 
-    // --- Título/meta
-    const titleEl = document.createElement("div");
-    titleEl.className = "item-title-wrap";
+    const title = document.createElement("div");
+    title.className = "item-title-wrap";
     const nome  = it.produto?.descricao ?? `#${it.product_id}`;
     const ref   = it.produto?.referencia ?? it.produto?.gtin ?? "";
-    titleEl.innerHTML = `
+    title.innerHTML = `
       <div class="item-title">${nome}</div>
       <div class="item-meta">${ref}</div>
     `;
 
-    // --- Preço unitário
-    const priceEl = document.createElement("div");
-    priceEl.className = "item-price";
-    priceEl.textContent = formatBRL(it.unit_price);
+    const qty = document.createElement("input");
+    qty.type = "number"; qty.min = "0"; qty.value = String(it.qty ?? 0);
+    qty.className = "qty-input";
+    qty.addEventListener("input", () => {
+      const v = parseInt(qty.value || "0", 10);
+      items[idx].qty = Number.isFinite(v) ? v : 0;
+      // atualiza subtotal em tempo real
+      const up = it.unit_price ?? null;
+      subtotal.textContent = (up!=null) ? formatBRL((items[idx].qty||0)*up) : "-";
+      updateTotal();
+    });
 
-    // --- Stepper de quantidade
-    const stepperEl = document.createElement("div");
-    stepperEl.className = "qty-stepper";
+    const price = document.createElement("div");
+    price.className = "item-price";
+    const up   = it.unit_price;
+    price.textContent = (up != null) ? formatBRL(up) : "-";
 
-    const minusBtn = document.createElement("button");
-    minusBtn.className = "stepper-btn"; 
-    minusBtn.type = "button"; 
-    minusBtn.textContent = "–";
+    // NOVO: subtotal por item
+    const subtotal = document.createElement("div");
+    subtotal.className = "item-subtotal";
+    subtotal.textContent = (up != null) ? formatBRL((it.qty||0)*up) : "-";
 
-    const qtyInput = document.createElement("input");
-    qtyInput.type = "number"; 
-    qtyInput.min  = "0"; 
-    qtyInput.value= String(it.qty ?? 0);
-    qtyInput.className = "qty-input";
+    const del = document.createElement("button");
+    del.className = "btn-remove";
+    del.textContent = "Remover";
+    del.addEventListener("click", () => { items.splice(idx, 1); renderItems(); updateTotal(); });
 
-    const plusBtn = document.createElement("button");
-    plusBtn.className = "stepper-btn"; 
-    plusBtn.type = "button"; 
-    plusBtn.textContent = "+";
-
-    stepperEl.append(minusBtn, qtyInput, plusBtn);
-
-    // --- Subtotal da linha
-    const subtotalEl = document.createElement("div");
-    subtotalEl.className = "item-subtotal";
-    subtotalEl.textContent = formatBRL(lineTotal(it));
-
-    // --- Lixeira
-    const trashBtn = document.createElement("button");
-    trashBtn.className = "btn-trash"; 
-    trashBtn.type = "button";
-    trashBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
-        <path d="M3 6h18M8 6v-.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V6m-8 0l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14M10 11v6M14 11v6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    `;
-    trashBtn.addEventListener("click", () => { items.splice(idx, 1); renderItems(); });
-
-    // --- Eventos de quantidade
-    function setQty(newVal){
-      const v = Math.max(0, Math.min(9999, parseInt(newVal ?? "0", 10) || 0));
-      items[idx].qty = v;
-      qtyInput.value = String(v);
-      subtotalEl.textContent = formatBRL(lineTotal(items[idx]));
-      updateFooterTotal?.();
-    }
-    minusBtn.addEventListener("click", () => setQty((items[idx].qty||0) - 1));
-    plusBtn .addEventListener("click", () => setQty((items[idx].qty||0) + 1));
-    qtyInput.addEventListener("input", () => setQty(qtyInput.value));
-
-    row.append(titleEl, priceEl, stepperEl, subtotalEl, trashBtn);
+    row.append(title, price, qty, subtotal, del);
     itemsList.appendChild(row);
   });
+}
 
-  updateFooterTotal?.();
+// se tiver um elemento de total com id="order-total", atualiza:
+const totalEl = document.getElementById("order-total");
+function updateTotal(){
+  if (!totalEl) return;
+  const sum = items.reduce((s,it)=> s + ((it.unit_price??0)* (it.qty??0)), 0);
+  totalEl.textContent = formatBRL(sum);
 }
 
 
