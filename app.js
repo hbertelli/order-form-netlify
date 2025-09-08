@@ -112,61 +112,89 @@ async function loadItems(){
 /* ---------- render ---------- */
 function renderItems(){
   itemsList.innerHTML = "";
-  if (!items.length){ emptyHint.style.display = "block"; updateFooterTotal(); return; }
+  if (!items.length){ 
+    emptyHint.style.display = "block"; 
+    updateFooterTotal?.(); 
+    return; 
+  }
   emptyHint.style.display = "none";
 
   items.forEach((it, idx) => {
     const row = document.createElement("div");
     row.className = "item-row";
 
-    // ... (título e preço unitário iguais ao que você já tem)
+    // --- Título/meta
+    const titleEl = document.createElement("div");
+    titleEl.className = "item-title-wrap";
+    const nome  = it.produto?.descricao ?? `#${it.product_id}`;
+    const ref   = it.produto?.referencia ?? it.produto?.gtin ?? "";
+    titleEl.innerHTML = `
+      <div class="item-title">${nome}</div>
+      <div class="item-meta">${ref}</div>
+    `;
+
+    // --- Preço unitário
+    const priceEl = document.createElement("div");
+    priceEl.className = "item-price";
+    priceEl.textContent = formatBRL(it.unit_price);
 
     // --- Stepper de quantidade
-    const stepper = document.createElement("div");
-    stepper.className = "qty-stepper";
+    const stepperEl = document.createElement("div");
+    stepperEl.className = "qty-stepper";
 
-    const btnMinus = document.createElement("button");
-    btnMinus.className = "stepper-btn"; btnMinus.type = "button"; btnMinus.textContent = "–";
+    const minusBtn = document.createElement("button");
+    minusBtn.className = "stepper-btn"; 
+    minusBtn.type = "button"; 
+    minusBtn.textContent = "–";
 
-    const qty = document.createElement("input");
-    qty.type = "number"; qty.min = "0"; qty.value = String(it.qty ?? 0);
-    qty.className = "qty-input";
+    const qtyInput = document.createElement("input");
+    qtyInput.type = "number"; 
+    qtyInput.min  = "0"; 
+    qtyInput.value= String(it.qty ?? 0);
+    qtyInput.className = "qty-input";
 
-    const btnPlus = document.createElement("button");
-    btnPlus.className = "stepper-btn"; btnPlus.type = "button"; btnPlus.textContent = "+";
+    const plusBtn = document.createElement("button");
+    plusBtn.className = "stepper-btn"; 
+    plusBtn.type = "button"; 
+    plusBtn.textContent = "+";
 
-    stepper.append(btnMinus, qty, btnPlus);
+    stepperEl.append(minusBtn, qtyInput, plusBtn);
 
     // --- Subtotal da linha
-    const subtotal = document.createElement("div");
-    subtotal.className = "item-subtotal";
-    subtotal.textContent = formatBRL(lineTotal(it));
+    const subtotalEl = document.createElement("div");
+    subtotalEl.className = "item-subtotal";
+    subtotalEl.textContent = formatBRL(lineTotal(it));
 
     // --- Lixeira
-    const trash = document.createElement("button");
-    trash.className = "btn-trash"; trash.type = "button";
-    trash.innerHTML = `...svg da lixeira...`;
-    trash.addEventListener("click", () => { items.splice(idx, 1); renderItems(); });
+    const trashBtn = document.createElement("button");
+    trashBtn.className = "btn-trash"; 
+    trashBtn.type = "button";
+    trashBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+        <path d="M3 6h18M8 6v-.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V6m-8 0l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14M10 11v6M14 11v6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+    trashBtn.addEventListener("click", () => { items.splice(idx, 1); renderItems(); });
 
-    // --- Eventos
+    // --- Eventos de quantidade
     function setQty(newVal){
-      const v = Math.max(0, Math.min(9999, parseInt(newVal||"0", 10) || 0));
+      const v = Math.max(0, Math.min(9999, parseInt(newVal ?? "0", 10) || 0));
       items[idx].qty = v;
-      qty.value = String(v);
-      subtotal.textContent = formatBRL(lineTotal(items[idx]));
-      updateFooterTotal();
+      qtyInput.value = String(v);
+      subtotalEl.textContent = formatBRL(lineTotal(items[idx]));
+      updateFooterTotal?.();
     }
-    btnMinus.addEventListener("click", () => setQty((items[idx].qty||0) - 1));
-    btnPlus .addEventListener("click", () => setQty((items[idx].qty||0) + 1));
-    qty.addEventListener("input", () => setQty(qty.value));
+    minusBtn.addEventListener("click", () => setQty((items[idx].qty||0) - 1));
+    plusBtn .addEventListener("click", () => setQty((items[idx].qty||0) + 1));
+    qtyInput.addEventListener("input", () => setQty(qtyInput.value));
 
-    row.append(title, price, stepper, subtotal, trash);
+    row.append(titleEl, priceEl, stepperEl, subtotalEl, trashBtn);
     itemsList.appendChild(row);
   });
 
-  // atualiza total após render completo
-  updateFooterTotal();
+  updateFooterTotal?.();
 }
+
 
 
 /* --------- footer -----------------*/
