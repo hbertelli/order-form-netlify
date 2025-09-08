@@ -93,14 +93,6 @@ async function loadItems(){
   items = arr.map(it => {
     const p = byId.get(String(it.product_id)) || null;
     const unit_price = computeUnitPrice(p);
-    console.log("Enrich item:", {
-      product_id: it.product_id,
-      found: !!p,
-      descricao: p?.descricao,
-      preco3: p?.preco3,
-      promo3: p?.promo3,
-      unit_price
-    });
     return { ...it, produto: p, unit_price };
   });
 
@@ -119,6 +111,7 @@ function renderItems(){
     row.className = "item-row";
 
     const title = document.createElement("div");
+    title.className = "item-title-wrap";       // <<< ADICIONE ESTA LINHA
     const nome  = it.produto?.descricao ?? `#${it.product_id}`;
     const ref   = it.produto?.referencia ?? it.produto?.gtin ?? "";
     title.innerHTML = `
@@ -127,17 +120,20 @@ function renderItems(){
     `;
 
     const qty = document.createElement("input");
-    qty.type = "number"; qty.min = "0"; qty.value = String(it.qty ?? 0); qty.className = "qty-input";
+    qty.type = "number"; qty.min = "0"; qty.value = String(it.qty ?? 0);
+    qty.className = "qty-input";
     qty.addEventListener("input", () => {
       const v = parseInt(qty.value || "0", 10);
       items[idx].qty = Number.isFinite(v) ? v : 0;
     });
 
     const price = document.createElement("div");
+    price.className = "item-price";            // <<< ADICIONE ESTA LINHA
     const val   = it.unit_price;
     price.textContent = (val != null) ? `R$ ${val.toFixed(2)}` : "-";
 
     const del = document.createElement("button");
+    del.className = "btn-remove";              // <<< ADICIONE ESTA LINHA
     del.textContent = "Remover";
     del.addEventListener("click", () => { items.splice(idx, 1); renderItems(); });
 
@@ -145,6 +141,7 @@ function renderItems(){
     itemsList.appendChild(row);
   });
 }
+
 
 /* ---------- persist / submit ---------- */
 async function saveChanges(){
