@@ -1,80 +1,75 @@
+/* ====== Base / tipografia ====== */
 :root{
-  --gap:12px;
-  --pad:14px;
-  --radius:12px;
-  --border:#e8e8e8;
-  --muted:#6b7280;
+  --gap:10px; --pad:12px; --radius:12px;
+  --border:#e5e7eb; --muted:#6b7280; --ink:#111827;
 }
+html,body{color:var(--ink);}
+h1{font-size:clamp(20px,4.5vw,28px);margin:.25rem 0 .5rem;}
+#session-info{font-size:.92rem;color:var(--muted);margin-bottom:.75rem;}
 
-/* container padrão */
-.page{max-width:960px;margin:0 auto;padding:16px;}
-.card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;}
+#items-list{display:grid;gap:12px;}
 
-/* lista */
-#items-list{display:grid;gap:10px;}
-
-/* MOBILE FIRST: empilha; depois expande com media queries */
+/* ====== Card do item (mobile-first) ====== */
 .item-row{
   display:grid;
   grid-template-areas:
-    "title  title"
-    "qty    price"
-    "remove remove";
+    "title  price"
+    "qty    remove";
   grid-template-columns: 1fr auto;
   align-items:center;
-  gap: var(--gap);
-  padding: var(--pad);
+  column-gap:14px; row-gap:8px;
+  padding:var(--pad);
   border:1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius:var(--radius);
   background:#fff;
+  box-shadow:0 1px 2px rgba(16,24,40,.04);
 }
 
-.item-title-wrap{ grid-area: title; }
+/* header: título + meta (código/gtin) */
+.item-title-wrap{ grid-area:title; min-width:0; }
 .item-title{ font-weight:600; line-height:1.25; }
-.item-meta{ font-size:.85rem; color:var(--muted); margin-top:2px; }
+.item-meta{ font-size:.82rem; color:var(--muted); margin-top:2px; }
 
+/* qty */
 .qty-input{
-  grid-area: qty;
-  width:92px;               /* largura confortável no touch */
-  height:44px;              /* 44px = acessível p/ toque */
-  padding:6px 10px;
-  font-size:16px;           /* evita zoom no iOS */
-  border:1px solid var(--border);
-  border-radius:10px;
-  background:#fff;
+  grid-area:qty;
+  width:88px; height:40px;
+  padding:6px 10px; font-size:16px; /* evita zoom no iOS */
+  border:1px solid var(--border); border-radius:10px; background:#fff;
 }
 
+/* preço (sempre à direita) */
 .item-price{
-  grid-area: price;
-  justify-self:end;
-  font-weight:600;
-  min-width:88px;
+  grid-area:price;
+  font-weight:700;
+  min-width:84px;
   text-align:right;
 }
 
+/* botão remover: “ghost” pequeno, na mesma linha do qty */
 .btn-remove{
-  grid-area: remove;
-  height:44px;
-  padding:0 14px;
-  border-radius:10px;
-  border:1px solid var(--border);
-  background:#f7f7f7;
-  cursor:pointer;
+  grid-area:remove;
+  justify-self:end;
+  height:40px; padding:0 10px;
+  background:transparent; color:#ef4444;
+  border:1px solid var(--border); border-radius:10px;
 }
+.btn-remove:hover{ background:#fff1f1; }
 
-/* Telas >= 480px: vira “linha” com 4 colunas */
-@media (min-width:480px){
+/* ====== Telas médias: distribui em 1 linha ====== */
+@media (min-width:520px){
   .item-row{
     grid-template-areas: "title qty price remove";
-    grid-template-columns: 1fr 96px auto 120px;
+    grid-template-columns: 1fr 110px auto 120px;
+    row-gap:6px;
   }
-  .btn-remove{ justify-self:end; }
+  .qty-input{ width:104px; }
 }
 
-/* Telas >= 768px: dá um pouco mais de respiro */
+/* ====== Telas maiores: um pouco mais de respiro ====== */
 @media (min-width:768px){
-  .item-row{
-    grid-template-columns: 1fr 112px auto 120px;
-  }
-  .qty-input{ width:108px; }
+  .item-row{ grid-template-columns: 1fr 116px 140px 130px; }
 }
+
+/* opcional: cortar títulos longos em uma linha */
+/* .item-title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } */
