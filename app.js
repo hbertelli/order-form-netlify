@@ -46,6 +46,15 @@ function computeUnitPrice(p){
   return Math.min(...cands);
 }
 
+function formatBRL(n){ return (n==null) ? "-" : n.toLocaleString("pt-BR", { style:"currency", currency:"BRL" }); }
+function lineTotal(it){ return (it?.unit_price!=null) ? (it.unit_price * (it.qty||0)) : null; }
+function grandTotal(){ return items.reduce((acc, it) => acc + ((it.unit_price ?? 0) * (it.qty ?? 0)), 0); }
+
+let footerTotalEl = null;
+function updateFooterTotal(){
+  if (footerTotalEl) footerTotalEl.textContent = formatBRL(grandTotal());
+}
+
 /* ---------- data ---------- */
 async function loadSession(){
   const { data, error } = await supabase
@@ -103,44 +112,94 @@ async function loadItems(){
 /* ---------- render ---------- */
 function renderItems(){
   itemsList.innerHTML = "";
-  if (!items.length){ emptyHint.style.display = "block"; return; }
+  if (!items.length){ emptyHint.style.display = "block"; updateFooterTotal(); return; }
   emptyHint.style.display = "none";
 
   items.forEach((it, idx) => {
     const row = document.createElement("div");
     row.className = "item-row";
 
-    const title = document.createElement("div");
-    title.className = "item-title-wrap";       // <<< ADICIONE ESTA LINHA
-    const nome  = it.produto?.descricao ?? `#${it.product_id}`;
-    const ref   = it.produto?.referencia ?? it.produto?.gtin ?? "";
-    title.innerHTML = `
-      <div class="item-title">${nome}</div>
-      <div class="item-meta">${ref}</div>
-    `;
+    // ... (título e preço unitário iguais ao que você já tem)
+
+    // --- Stepper de quantidade
+    const stepper = document.createElement("div");
+    stepper.className = "qty-stepper";
+
+    const btnMinus = document.createElement("button");
+    btnMinus.className = "stepper-btn"; btnMinus.type = "button"; btnMinus.textContent = "–";
 
     const qty = document.createElement("input");
     qty.type = "number"; qty.min = "0"; qty.value = String(it.qty ?? 0);
     qty.className = "qty-input";
-    qty.addEventListener("input", () => {
-      const v = parseInt(qty.value || "0", 10);
-      items[idx].qty = Number.isFinite(v) ? v : 0;
-    });
 
-    const price = document.createElement("div");
-    price.className = "item-price";            // <<< ADICIONE ESTA LINHA
-    const val   = it.unit_price;
-    price.textContent = (val != null) ? `R$ ${val.toFixed(2)}` : "-";
+    const btnPlus = document.createElement("button");
+    btnPlus.className = "stepper-btn"; btnPlus.type = "button"; btnPlus.textContent = "+";
 
-    const del = document.createElement("button");
-    del.className = "btn-remove";              // <<< ADICIONE ESTA LINHA
-    del.textContent = "Remover";
-    del.addEventListener("click", () => { items.splice(idx, 1); renderItems(); });
+    stepper.append(btnMinus, qty, btnPlus);
 
-    row.append(title, qty, price, del);
+    // --- Subtotal da linha
+    const subtotal = document.createElement("div");
+    subtotal.className = "item-subtotal";
+    subtotal.textContent = formatBRL(lineTotal(it));
+
+    // --- Lixeira
+    const trash = document.createElement("button");
+    trash.className = "btn-trash"; trash.type = "button";
+    trash.innerHTML = `...svg da lixeira...`;
+    trash.addEventListener("click", () => { items.splice(idx, 1); renderItems(); });
+
+    // --- Eventos
+    function setQty(newVal){
+      const v = Math.max(0, Math.min(9999, parseInt(newVal||"0", 10) || 0));
+      items[idx].qty = v;
+      qty.value = String(v);
+      subtotal.textContent = formatBRL(lineTotal(items[idx]));
+      updateFooterTotal();
+    }
+    btnMinus.addEventListener("click", () => setQty((items[idx].qty||0) - 1));
+    btnPlus .addEventListener("click", () => setQty((items[idx].qty||0) + 1));
+    qty.addEventListener("input", () => setQty(qty.value));
+
+    row.append(title, price, stepper, subtotal, trash);
     itemsList.appendChild(row);
   });
+
+  // atualiza total após render completo
+  updateFooterTotal();
 }
+
+
+/* --------- footer -----------------*/
+
+function mountFooter(){
+  const footer = document.createElement("div");
+  footer.id = "cart-footer";
+  footer.innerHTML = `
+    <div class="footer-inner">
+      <div class="footer-total">Total: <strong id="footer-total">R$ 0,00</strong></div>
+      <div class="footer-actions">
+        <button id="footer-save" class="btn-secondary" type="button">Salvar</button>
+        <button id="footer-submit" class="btn-primary" type="button">Enviar pedido</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(footer);
+
+  footerTotalEl = document.getElementById("footer-total");
+  const footerSave   = document.getElementById("footer-save");
+  const footerSubmit = document.getElementById("footer-submit");
+
+  // reaproveita suas funções existentes
+  footerSave.onclick = async () => {
+    try { await saveChanges(); showAlert("Alterações salvas."); updateFooterTotal(); }
+    catch(e){ showAlert(e.message); }
+  };
+  footerSubmit.onclick = async () => {
+    try { await saveChanges(); await submitOrder(); }
+    catch(e){ showAlert(e.message); }
+  };
+}
+
 
 
 /* ---------- persist / submit ---------- */
@@ -169,6 +228,9 @@ async function submitOrder(){
     await loadSession();
     await loadItems();
     renderItems();
+    mountFooter();           // << novo
+    updateFooterTotal();     // << garante total correto ao abrir
+
 
     saveBtn.onclick = async () => {
       try{ await saveChanges(); showAlert("Alterações salvas."); }
