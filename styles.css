@@ -73,3 +73,41 @@ h1{font-size:clamp(20px,4.5vw,28px);margin:.25rem 0 .5rem;}
 
 /* opcional: cortar títulos longos em uma linha */
 /* .item-title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } */
+
+/* espaço para não ficar escondido atrás do footer fixo */
+body{ padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+
+/* Footer fixo */
+#cart-footer{
+  position: fixed; left:0; right:0; bottom:0; z-index: 50;
+  background:#fff; border-top:1px solid var(--border);
+  box-shadow: 0 -8px 16px rgba(16,24,40,.06);
+}
+
+#cart-footer .footer-inner{
+  max-width: 960px; margin:0 auto;
+  display:flex; align-items:center; gap:12px; justify-content:space-between;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+}
+
+.footer-total{ font-weight:700; color:var(--brand-ink); font-size:1.05rem; }
+.footer-actions{ display:flex; gap:10px; }
+
+.btn-primary{
+  background: var(--brand); color:#fff; border:none;
+  height:42px; padding:0 14px; border-radius:12px; cursor:pointer;
+}
+.btn-primary:hover{ filter:brightness(0.95); }
+
+.btn-secondary{
+  background:transparent; color:var(--brand-ink);
+  border:1px solid var(--border);
+  height:42px; padding:0 12px; border-radius:12px; cursor:pointer;
+}
+
+/* telas pequenas: empilha total acima dos botões */
+@media (max-width:420px){
+  #cart-footer .footer-inner{ flex-direction:column; align-items:stretch; }
+  .footer-actions{ width:100%; }
+  .footer-actions > button{ flex:1; }
+}
