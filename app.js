@@ -52,11 +52,15 @@ function formatBRL(n){
 function lineTotal(it){ return (it?.unit_price!=null) ? (it.unit_price * (it.qty||0)) : null; }
 function grandTotal(){ return items.reduce((acc, it) => acc + ((it.unit_price ?? 0) * (it.qty ?? 0)), 0); }
 
-// --- totais (um único destino: #order-total) ---
-const totalEl = document.getElementById("order-total"); // existe no HTML da barra fixa
-function updateTotals(){
+function updateTotalsBoth(){
   const sum = items.reduce((s,it)=> s + ((it.unit_price ?? 0) * (it.qty ?? 0)), 0);
-  if (totalEl) totalEl.textContent = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(sum);
+  const txt = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(sum);
+
+  const pageTotal   = document.getElementById('order-total');  // total “estático”
+  const footerTotal = document.getElementById('footer-total'); // total da barra flutuante
+
+  if (pageTotal)   pageTotal.textContent   = txt;
+  if (footerTotal) footerTotal.textContent = txt;
 }
 
 // --- envio (usa mesmo handler nos dois botões, se existirem) ---
@@ -146,7 +150,7 @@ function renderItems(){
   itemsList.innerHTML = "";
     if (!items.length){
     emptyHint.style.display = "block";
-    updateTotals();                   // <<< garante total zerado quando não há itens
+    updateTotalsBoth();                   // <<< garante total zerado quando não há itens
     return;
   }
   emptyHint.style.display = "none";
@@ -173,7 +177,7 @@ function renderItems(){
       // atualiza subtotal em tempo real
       const up = it.unit_price ?? null;
       subtotal.textContent = (up!=null) ? formatBRL((items[idx].qty||0)*up) : "-";
-      updateTotals();
+      updateTotalsBoth();
     });
 
     const price = document.createElement("div");
@@ -192,14 +196,14 @@ function renderItems(){
     del.addEventListener("click", () => {
       items.splice(idx, 1);
       renderItems();
-      updateTotals();            
+      updateTotalsBoth();            
     });
 
     row.append(title, price, qty, subtotal, del);
     itemsList.appendChild(row);
   });
   
-  updateTotals();
+  updateTotalsBoth();
 }
 
 
@@ -215,7 +219,7 @@ function mountFooter(){
 
   if (footerSave){
     footerSave.onclick = async () => {
-      try { await saveChanges(); showAlert("Alterações salvas."); updateTotals(); }
+      try { await saveChanges(); showAlert("Alterações salvas."); updateTotalsBoth(); }
       catch(e){ showAlert(e.message); }
     };
   }
@@ -253,11 +257,11 @@ async function submitOrder(){
     await loadItems();
     renderItems();
     mountFooter();
-    updateTotals();
+    updateTotalsBoth();
 
     if (typeof saveBtn !== "undefined" && saveBtn){
       saveBtn.onclick = async () => {
-        try { await saveChanges(); showAlert("Alterações salvas."); updateTotals(); }
+        try { await saveChanges(); showAlert("Alterações salvas."); updateTotalsBoth(); }
         catch(e){ showAlert(e.message); }
       };
     }
