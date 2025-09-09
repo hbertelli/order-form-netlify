@@ -52,18 +52,16 @@ function formatBRL(n){
 function lineTotal(it){ return (it?.unit_price!=null) ? (it.unit_price * (it.qty||0)) : null; }
 function grandTotal(){ return items.reduce((acc, it) => acc + ((it.unit_price ?? 0) * (it.qty ?? 0)), 0); }
 
-let footerTotalEl = null;                      // será setado no mountFooter()
-const totalEl = document.getElementById("order-total"); // pode ser null se não existir
+const totalEl = document.getElementById("order-total"); // da barra fixa
+let footerTotalEl = null; // será setado no mountFooter
 
-function setTotalOnUI(totalNumber){
-  const text = formatBRL(totalNumber);
-  if (footerTotalEl) footerTotalEl.textContent = text;  // footer sticky
-  if (totalEl)       totalEl.textContent       = text;  // total em outro lugar da página
+function setTotalOnUI(n){
+  const txt = formatBRL(n);
+  if (footerTotalEl) footerTotalEl.textContent = txt;
+  if (totalEl)       totalEl.textContent       = txt;
 }
+function updateTotals(){ setTotalOnUI(grandTotal()); }
 
-function updateTotals(){
-  setTotalOnUI(grandTotal());
-}
 
 let isSubmitting = false;
 
@@ -221,31 +219,22 @@ function renderItems(){
 /* --------- footer -----------------*/
 
 function mountFooter(){
-  const footer = document.createElement("div");
-  footer.id = "cart-footer";
-  footer.innerHTML = `
-    <div class="footer-inner">
-      <div class="footer-total">Total: <strong id="footer-total">R$ 0,00</strong></div>
-      <div class="footer-actions">
-        <button id="footer-save" class="btn-secondary" type="button">Salvar</button>
-        <button id="footer-submit" class="btn-primary" type="button">Enviar pedido</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(footer);
+  // NÃO cria DOM. Só conecta aos elementos que já existem no HTML.
+  footerTotalEl = document.getElementById("order-total");
+  const footerSave = document.getElementById("save-btn");
+  footerSubmit     = document.getElementById("submit-btn");
 
-  footerTotalEl = document.getElementById("footer-total");
-  const footerSave   = document.getElementById("footer-save");
-  const footerSubmit = document.getElementById("footer-submit");
-
-  footerSave.onclick = async () => {
-    try { await saveChanges(); showAlert("Alterações salvas."); updateFooterTotal(); }
-    catch(e){ showAlert(e.message); }
-  };
-  
-  footerSubmit.onclick = handleSubmit;
-
+  if (footerSave){
+    footerSave.onclick = async () => {
+      try { await saveChanges(); showAlert("Alterações salvas."); updateTotals(); }
+      catch(e){ showAlert(e.message); }
+    };
+  }
+  if (footerSubmit){
+    footerSubmit.onclick = handleSubmit; // seu handler único de envio
+  }
 }
+
 
 
 
