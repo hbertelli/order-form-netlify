@@ -65,6 +65,38 @@ function updateTotals(){
   setTotalOnUI(grandTotal());
 }
 
+let isSubmitting = false;
+
+function setSubmitting(on){
+  const btns = [
+    submitBtn,
+    document.getElementById("footer-submit"),
+  ].filter(Boolean);
+  btns.forEach(b => {
+    b.disabled = !!on;
+    if (!b) return;
+    const label = b.getAttribute("data-label") || b.textContent;
+    if (!b.getAttribute("data-label")) b.setAttribute("data-label", label);
+    b.textContent = on ? "Enviando..." : label;
+  });
+}
+
+async function handleSubmit(){
+  if (isSubmitting) return;
+  isSubmitting = true;
+  setSubmitting(true);
+  try {
+    await saveChanges();
+    await submitOrder();
+    alert("Pedido enviado!");
+    location.replace("about:blank");      // ou redirecione para página de “obrigado”
+  } catch (e) {
+    showAlert(e?.message || "Falha ao enviar pedido.");
+  } finally {
+    setSubmitting(false);
+    isSubmitting = false;
+  }
+}
 
 
 /* ---------- data ---------- */
@@ -206,15 +238,13 @@ function mountFooter(){
   const footerSave   = document.getElementById("footer-save");
   const footerSubmit = document.getElementById("footer-submit");
 
-  // reaproveita suas funções existentes
   footerSave.onclick = async () => {
     try { await saveChanges(); showAlert("Alterações salvas."); updateFooterTotal(); }
     catch(e){ showAlert(e.message); }
   };
-  footerSubmit.onclick = async () => {
-    try { await saveChanges(); await submitOrder(); }
-    catch(e){ showAlert(e.message); }
-  };
+  
+  footerSubmit.onclick = handleSubmit;
+
 }
 
 
@@ -252,14 +282,9 @@ async function submitOrder(){
       try{ await saveChanges(); showAlert("Alterações salvas."); }
       catch(e){ showAlert(e.message); }
     };
-    submitBtn.onclick = async () => {
-      try{
-        await saveChanges();
-        await submitOrder();
-        alert("Pedido enviado!");
-        location.replace("about:blank");
-      } catch(e){ showAlert(e.message); }
-    };
+    
+    submitBtn.onclick = handleSubmit;
+
   } catch(e){
     showAlert(e.message || String(e));
   }
