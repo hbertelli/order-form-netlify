@@ -58,16 +58,18 @@ h1{font-size:clamp(20px,4.5vw,28px);margin:.25rem 0 .5rem;}
 }
 .btn-remove:hover{ background:#fff1f1; }
 
-/* ≥520px: uma linha compacta */
+/* ≥520px: uma linha COM subtotal */
 @media (min-width:520px){
   .item-row{
-    grid-template-areas: "title qty price remove";
-    grid-template-columns: 1fr 110px 120px 120px;
+    /* antes: "title qty price remove" */
+    grid-template-areas: "title qty price subtotal remove";
+    /* ajuste larguras conforme preferir */
+    grid-template-columns: 1fr 110px 120px 140px 120px;
     row-gap:6px;
   }
-  .item-subtotal{ display:none; }       /* some no desktop se quiser */
   .qty-input{ width:104px; }
 }
+
 
 /* ≥768px: mais respiro */
 @media (min-width:768px){
