@@ -52,10 +52,20 @@ function formatBRL(n){
 function lineTotal(it){ return (it?.unit_price!=null) ? (it.unit_price * (it.qty||0)) : null; }
 function grandTotal(){ return items.reduce((acc, it) => acc + ((it.unit_price ?? 0) * (it.qty ?? 0)), 0); }
 
-let footerTotalEl = null;
-function updateFooterTotal(){
-  if (footerTotalEl) footerTotalEl.textContent = formatBRL(grandTotal());
+let footerTotalEl = null;                      // será setado no mountFooter()
+const totalEl = document.getElementById("order-total"); // pode ser null se não existir
+
+function setTotalOnUI(totalNumber){
+  const text = formatBRL(totalNumber);
+  if (footerTotalEl) footerTotalEl.textContent = text;  // footer sticky
+  if (totalEl)       totalEl.textContent       = text;  // total em outro lugar da página
 }
+
+function updateTotals(){
+  setTotalOnUI(grandTotal());
+}
+
+
 
 /* ---------- data ---------- */
 async function loadSession(){
@@ -114,7 +124,11 @@ async function loadItems(){
 /* ---------- render ---------- */
 function renderItems(){
   itemsList.innerHTML = "";
-  if (!items.length){ emptyHint.style.display = "block"; return; }
+    if (!items.length){
+    emptyHint.style.display = "block";
+    updateTotals();                   // <<< garante total zerado quando não há itens
+    return;
+  }
   emptyHint.style.display = "none";
 
   items.forEach((it, idx) => {
@@ -139,7 +153,7 @@ function renderItems(){
       // atualiza subtotal em tempo real
       const up = it.unit_price ?? null;
       subtotal.textContent = (up!=null) ? formatBRL((items[idx].qty||0)*up) : "-";
-      updateTotal();
+      updateTotals();
     });
 
     const price = document.createElement("div");
@@ -155,20 +169,20 @@ function renderItems(){
     const del = document.createElement("button");
     del.className = "btn-remove";
     del.textContent = "Remover";
-    del.addEventListener("click", () => { items.splice(idx, 1); renderItems(); updateTotal(); });
+    del.addEventListener("click", () => {
+      items.splice(idx, 1);
+      renderItems();
+      updateTotals();            
+    });
 
     row.append(title, price, qty, subtotal, del);
     itemsList.appendChild(row);
   });
+  
+  updateTotals();
 }
 
-// se tiver um elemento de total com id="order-total", atualiza:
-const totalEl = document.getElementById("order-total");
-function updateTotal(){
-  if (!totalEl) return;
-  const sum = items.reduce((s,it)=> s + ((it.unit_price??0)* (it.qty??0)), 0);
-  totalEl.textContent = formatBRL(sum);
-}
+
 
 
 
@@ -231,9 +245,8 @@ async function submitOrder(){
     await loadSession();
     await loadItems();
     renderItems();
-    mountFooter();           // << novo
-    updateFooterTotal();     // << garante total correto ao abrir
-
+    mountFooter();
+    updateTotals();
 
     saveBtn.onclick = async () => {
       try{ await saveChanges(); showAlert("Alterações salvas."); }
