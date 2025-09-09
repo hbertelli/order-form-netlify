@@ -52,49 +52,39 @@ function formatBRL(n){
 function lineTotal(it){ return (it?.unit_price!=null) ? (it.unit_price * (it.qty||0)) : null; }
 function grandTotal(){ return items.reduce((acc, it) => acc + ((it.unit_price ?? 0) * (it.qty ?? 0)), 0); }
 
-const totalEl = document.getElementById("order-total"); // da barra fixa
-let footerTotalEl = null; // será setado no mountFooter
-
-function setTotalOnUI(n){
-  const txt = formatBRL(n);
-  if (footerTotalEl) footerTotalEl.textContent = txt;
-  if (totalEl)       totalEl.textContent       = txt;
+// --- totais (um único destino: #order-total) ---
+const totalEl = document.getElementById("order-total"); // existe no HTML da barra fixa
+function updateTotals(){
+  const sum = items.reduce((s,it)=> s + ((it.unit_price ?? 0) * (it.qty ?? 0)), 0);
+  if (totalEl) totalEl.textContent = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(sum);
 }
-function updateTotals(){ setTotalOnUI(grandTotal()); }
 
-
+// --- envio (usa mesmo handler nos dois botões, se existirem) ---
+let footerSubmit = null;   // <<< GARANTA ESTA LINHA (global)
 let isSubmitting = false;
 
 function setSubmitting(on){
-  const btns = [
-    submitBtn,
-    document.getElementById("footer-submit"),
-  ].filter(Boolean);
-  btns.forEach(b => {
-    b.disabled = !!on;
-    if (!b) return;
-    const label = b.getAttribute("data-label") || b.textContent;
-    if (!b.getAttribute("data-label")) b.setAttribute("data-label", label);
-    b.textContent = on ? "Enviando..." : label;
-  });
+  isSubmitting = on;
+  const txt = on ? "Enviando..." : "Enviar pedido";
+  if (footerSubmit) { footerSubmit.disabled = on; footerSubmit.textContent = txt; }
+  if (typeof submitBtn !== "undefined" && submitBtn) { submitBtn.disabled = on; submitBtn.textContent = txt; }
 }
 
 async function handleSubmit(){
   if (isSubmitting) return;
-  isSubmitting = true;
-  setSubmitting(true);
-  try {
+  try{
+    setSubmitting(true);
     await saveChanges();
     await submitOrder();
     alert("Pedido enviado!");
-    location.replace("about:blank");      // ou redirecione para página de “obrigado”
-  } catch (e) {
-    showAlert(e?.message || "Falha ao enviar pedido.");
+    location.replace("about:blank");
+  } catch(e){
+    showAlert(e.message || String(e));
   } finally {
     setSubmitting(false);
-    isSubmitting = false;
   }
 }
+
 
 
 /* ---------- data ---------- */
@@ -219,10 +209,9 @@ function renderItems(){
 /* --------- footer -----------------*/
 
 function mountFooter(){
-  // NÃO cria DOM. Só conecta aos elementos que já existem no HTML.
-  footerTotalEl = document.getElementById("order-total");
+  // usar os elementos que já estão no HTML
   const footerSave = document.getElementById("save-btn");
-  footerSubmit     = document.getElementById("submit-btn");
+  footerSubmit     = document.getElementById("submit-btn");  // <<< atribui à global
 
   if (footerSave){
     footerSave.onclick = async () => {
@@ -231,10 +220,9 @@ function mountFooter(){
     };
   }
   if (footerSubmit){
-    footerSubmit.onclick = handleSubmit; // seu handler único de envio
+    footerSubmit.onclick = handleSubmit; // mesmo handler do topo (se existir)
   }
 }
-
 
 
 
@@ -267,12 +255,15 @@ async function submitOrder(){
     mountFooter();
     updateTotals();
 
-    saveBtn.onclick = async () => {
-      try{ await saveChanges(); showAlert("Alterações salvas."); }
-      catch(e){ showAlert(e.message); }
-    };
-    
-    submitBtn.onclick = handleSubmit;
+    if (typeof saveBtn !== "undefined" && saveBtn){
+      saveBtn.onclick = async () => {
+        try { await saveChanges(); showAlert("Alterações salvas."); updateTotals(); }
+        catch(e){ showAlert(e.message); }
+      };
+    }
+    if (typeof submitBtn !== "undefined" && submitBtn){
+      submitBtn.onclick = handleSubmit;
+    }
 
   } catch(e){
     showAlert(e.message || String(e));
