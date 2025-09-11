@@ -245,28 +245,44 @@ function updateActionBarsVisibility() {
 
 /* ---------- data ---------- */
 async function loadSession(){
+  console.log('🔍 Tentando carregar sessão com token:', token);
+  console.log('🔍 Configuração Supabase URL:', cfg.SUPABASE_URL);
+  console.log('🔍 Schema configurado: demo');
+  
   const { data, error } = await supabase
     .from("order_sessions")
     .select("id, expires_at, used, created_at")
     .eq("id", token)
     .maybeSingle();
   
-  console.log('loadSession result:', { data, error, token });
+  console.log('📊 Resultado da consulta:', { 
+    data, 
+    error, 
+    token,
+    hasData: !!data,
+    errorCode: error?.code,
+    errorMessage: error?.message 
+  });
   
   if (error) {
     console.error('Erro na consulta:', error);
     showErrorPage(
       "Erro de Acesso",
-      `Erro na consulta: ${error.message}. Verifique se as tabelas existem no schema correto.`,
+      `Erro na consulta: ${error.message}. Código: ${error.code}. Verifique se a tabela 'order_sessions' existe no schema 'demo'.`,
       "🚫"
     );
     throw error;
   }
   
   if (!data) {
+    console.warn('⚠️ Nenhuma sessão encontrada para o token:', token);
+    console.log('💡 Verificando se o token é um UUID válido...');
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token);
+    console.log('🔍 Token é UUID válido:', isValidUUID);
+    
     showErrorPage(
       "Sessão Não Encontrada",
-      "Não foi possível encontrar sua sessão. Verifique se o link está correto ou solicite um novo link de acesso.",
+      `Não foi possível encontrar sua sessão com o token: ${token.substring(0, 8)}... Verifique se o link está correto ou solicite um novo link de acesso.`,
       "🚫"
     );
     throw new Error("Sessão não encontrada");
