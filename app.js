@@ -11,7 +11,74 @@ const emptyHint   = document.getElementById("empty-hint");
 
 function showAlert(msg){ alertBox.textContent = msg || ""; alertBox.style.display = msg ? "block":"none"; }
 function fmtDate(s){ try{ return new Date(s).toLocaleString("pt-BR",{ timeZone:"America/Sao_Paulo" }); } catch { return s; } }
-if (!token) { document.body.innerHTML = "Link inválido: token ausente."; throw new Error("token ausente"); }
+
+function showErrorPage(title, message, icon = "❌") {
+  document.body.innerHTML = `
+    <div style="
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--gray-50) 0%, #ffffff 100%);
+      padding: 20px;
+    ">
+      <div style="
+        max-width: 500px;
+        background: white;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: var(--shadow-lg);
+        text-align: center;
+        border: 1px solid var(--gray-200);
+      ">
+        <div style="font-size: 64px; margin-bottom: 20px;">${icon}</div>
+        <h1 style="
+          font-size: 28px;
+          font-weight: 700;
+          margin: 0 0 16px;
+          color: var(--gray-900);
+        ">${title}</h1>
+        <p style="
+          font-size: 16px;
+          line-height: 1.6;
+          margin: 0 0 24px;
+          color: var(--gray-600);
+        ">${message}</p>
+        <div style="
+          background: var(--warning-light);
+          padding: 16px;
+          border-radius: 8px;
+          border-left: 4px solid var(--warning);
+          margin-bottom: 24px;
+        ">
+          <p style="
+            margin: 0;
+            font-size: 14px;
+            color: var(--warning);
+            font-weight: 600;
+          ">
+            💡 Entre em contato conosco se precisar de um novo link
+          </p>
+        </div>
+        <small style="
+          color: var(--gray-500);
+          font-size: 13px;
+        ">
+          Você pode fechar esta página com segurança.
+        </small>
+      </div>
+    </div>
+  `;
+}
+
+if (!token) { 
+  showErrorPage(
+    "Link Inválido", 
+    "Este link não contém um token válido. Verifique se você copiou o link completo ou solicite um novo link de acesso.",
+    "🔗"
+  ); 
+  throw new Error("token ausente"); 
+}
 
 const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
   db: { schema: "demo" },
@@ -184,10 +251,43 @@ async function loadSession(){
     .from("order_sessions")
     .select("id, expires_at, used, created_at")
     .single();
-  if (error) throw error;
-  if (!data) throw new Error("Sessão não encontrada.");
-  if (data.used) throw new Error("Sessão já utilizada.");
-  if (new Date(data.expires_at) < new Date()) throw new Error("Sessão expirada.");
+  
+  if (error) {
+    showErrorPage(
+      "Erro de Acesso",
+      "Não foi possível acessar sua sessão. Verifique se o link está correto ou solicite um novo link de acesso.",
+      "🚫"
+    );
+    throw error;
+  }
+  
+  if (!data) {
+    showErrorPage(
+      "Sessão Não Encontrada",
+      "Esta sessão não existe ou foi removida do sistema. Solicite um novo link de acesso para continuar.",
+      "🔍"
+    );
+    throw new Error("Sessão não encontrada.");
+  }
+  
+  if (data.used) {
+    showErrorPage(
+      "Pedido Já Enviado",
+      "Este link já foi utilizado para enviar um pedido. Cada link pode ser usado apenas uma vez por questões de segurança.",
+      "✅"
+    );
+    throw new Error("Sessão já utilizada.");
+  }
+  
+  if (new Date(data.expires_at) < new Date()) {
+    showErrorPage(
+      "Link Expirado",
+      `Este link expirou em ${fmtDate(data.expires_at)}. Solicite um novo link de acesso para continuar com seu pedido.`,
+      "⏰"
+    );
+    throw new Error("Sessão expirada.");
+  }
+  
   session = data;
   sessionInfo.textContent = `Expira em ${fmtDate(session.expires_at)}`;
 }
@@ -368,6 +468,14 @@ async function submitOrder(){
     updateActionBarsVisibility();
 
   } catch(e){
-    showAlert(e.message || String(e));
+    // Se já não mostrou uma página de erro específica, mostra erro genérico
+    if (!document.body.innerHTML.includes('min-height: 100vh')) {
+      showErrorPage(
+        "Erro Inesperado",
+        "Ocorreu um problema ao carregar sua sessão. Tente novamente ou solicite um novo link de acesso.",
+        "⚠️"
+      );
+    }
+    console.error('Erro na inicialização:', e);
   }
 })();
