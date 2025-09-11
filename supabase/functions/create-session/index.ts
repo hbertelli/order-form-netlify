@@ -44,7 +44,7 @@ Deno.serve(async (req: Request) => {
       // Busca por código do cliente
       const { data, error } = await supabase
         .from('clientes_atacamax')
-        .select('codpessoa, nome, cpfcgc')
+        .select('cod_cliente, nome, cpfcgc')
         .eq('codpessoa', customer_id)
         .single()
       
@@ -118,7 +118,7 @@ Deno.serve(async (req: Request) => {
     // Cliente existe, buscar produtos do último pedido na view
     const { data: lastOrderProducts, error: lastOrderError } = await supabase
       .from('v_last_order_by_product_atacamax')
-      .select('codprodfilho, qtde')
+      .select('cod_cliente, codprodfilho, qtde')
       .eq('cod_cliente', customer.cod_cliente)
 
     if (lastOrderError) {
@@ -137,6 +137,10 @@ Deno.serve(async (req: Request) => {
         }
       )
     }
+
+    console.log('🔍 Debug - Customer object:', customer)
+    console.log('🔍 Debug - Customer ID usado na query:', customer.cod_cliente)
+    console.log('🔍 Debug - Last order products found:', lastOrderProducts?.length || 0)
 
     if (!lastOrderProducts || lastOrderProducts.length === 0) {
       return new Response(
