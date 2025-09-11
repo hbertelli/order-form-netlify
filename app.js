@@ -81,12 +81,7 @@ if (!token) {
 }
 
 const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
-  db: { schema: "demo" },
-  global: {
-    headers: {
-      'x-session-id': token
-    }
-  }
+  db: { schema: "public" }
 });
 
 let session = null;
@@ -247,8 +242,21 @@ function updateActionBarsVisibility() {
 async function loadSession(){
   const { data, error } = await supabase
     .from("order_sessions")
-    .select("id, expires_at, used, created_at") 
+    .select("id, expires_at, used, created_at")
     .eq("id", token)
+    .maybeSingle();
+  
+  console.log('loadSession result:', { data, error, token });
+  
+  if (error) {
+    console.error('Erro na consulta:', error);
+    showErrorPage(
+      "Erro de Acesso",
+      `Erro na consulta: ${error.message}. Verifique se as tabelas existem no schema correto.`,
+      "🚫"
+    );
+    throw error;
+  }
     .single();
   
   if (error) {
