@@ -87,47 +87,70 @@ Deno.serve(async (req: Request) => {
 
       console.log('🔍 Debug - Buscando CNPJ:', cleanInputCnpj)
       
-      // Primeira tentativa: busca direta por CNPJ limpo
+      // Função para formatar CNPJ
+      const formatCnpj = (cnpj) => {
+        if (cnpj.length !== 14) return cnpj
+        return `${cnpj.substring(0,2)}.${cnpj.substring(2,5)}.${cnpj.substring(5,8)}/${cnpj.substring(8,12)}-${cnpj.substring(12,14)}`
+      }
+      
+      const formattedCnpj = formatCnpj(cleanInputCnpj)
+      console.log('🔍 Debug - CNPJ formatado:', formattedCnpj)
+      
+      // Primeira tentativa: busca por CNPJ formatado
       let { data, error } = await supabase
         .from('clientes_atacamax')
         .select('codpessoa, nome, cpfcgc')
-        .eq('cpfcgc', cleanInputCnpj)
+        .eq('cpfcgc', formattedCnpj)
         .maybeSingle()
       
-      console.log('🔍 Debug - Busca direta resultado:', { data, error })
+      console.log('🔍 Debug - Busca formatada resultado:', { data, error })
       
-      // Se não encontrou, tenta busca com formatação original
+      // Se não encontrou, tenta busca com CNPJ limpo
       if (!data && !error) {
-        console.log('🔍 Debug - Tentando busca com CNPJ original:', actualCnpj)
+        console.log('🔍 Debug - Tentando busca com CNPJ limpo:', cleanInputCnpj)
         const result2 = await supabase
+          .from('clientes_atacamax')
+          .select('codpessoa, nome, cpfcgc')
+          .eq('cpfcgc', cleanInputCnpj)
+          .maybeSingle()
+        
+        data = result2.data
+        error = result2.error
+        console.log('🔍 Debug - Busca limpa resultado:', { data, error })
+      }
+      
+      // Se não encontrou, tenta busca com CNPJ original (como veio na requisição)
+      if (!data && !error && actualCnpj !== formattedCnpj && actualCnpj !== cleanInputCnpj) {
+        console.log('🔍 Debug - Tentando busca com CNPJ original:', actualCnpj)
+        const result3 = await supabase
           .from('clientes_atacamax')
           .select('codpessoa, nome, cpfcgc')
           .eq('cpfcgc', actualCnpj)
           .maybeSingle()
         
-        data = result2.data
-        error = result2.error
-        console.log('🔍 Debug - Busca com formatação resultado:', { data, error })
+        data = result3.data
+        error = result3.error
+        console.log('🔍 Debug - Busca original resultado:', { data, error })
       }
       
       // Se ainda não encontrou, tenta busca com LIKE para encontrar padrões similares
       if (!data && !error) {
         console.log('🔍 Debug - Tentando busca com LIKE')
-        const result3 = await supabase
+        const result4 = await supabase
           .from('clientes_atacamax')
           .select('codpessoa, nome, cpfcgc')
           .like('cpfcgc', `%${cleanInputCnpj}%`)
           .limit(5)
         
-        console.log('🔍 Debug - Busca LIKE resultado:', result3)
+        console.log('🔍 Debug - Busca LIKE resultado:', result4)
         
-        if (result3.data && result3.data.length === 1) {
-          data = result3.data[0]
-          error = result3.error
-        } else if (result3.data && result3.data.length > 1) {
-          console.log('🔍 Debug - Múltiplos resultados encontrados:', result3.data.map(c => ({ id: c.codpessoa, cnpj: c.cpfcgc })))
+        if (result4.data && result4.data.length === 1) {
+          data = result4.data[0]
+          error = result4.error
+        } else if (result4.data && result4.data.length > 1) {
+          console.log('🔍 Debug - Múltiplos resultados encontrados:', result4.data.map(c => ({ id: c.codpessoa, cnpj: c.cpfcgc })))
           // Tenta encontrar match exato nos resultados
-          const exactMatch = result3.data.find(c => 
+          const exactMatch = result4.data.find(c => 
             c.cpfcgc?.replace(/[^\d]/g, '') === cleanInputCnpj
           )
           if (exactMatch) {
