@@ -271,16 +271,6 @@ async function loadSession(){
       "🚫"
     );
     throw error;
-  }
-  
-  if (!data) {
-    showErrorPage(
-      "Sessão Não Encontrada",
-      "Esta sessão não existe ou foi removida do sistema. Solicite um novo link de acesso para continuar.",
-      "🔍"
-    );
-    throw new Error("Sessão não encontrada.");
-  }
   
   if (data.used) {
     showErrorPage(
