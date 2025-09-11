@@ -20,8 +20,22 @@ Deno.serve(async (req: Request) => {
 
     const { customer_id, cnpj } = await req.json()
 
+    // Detectar automaticamente se é CNPJ ou customer_id
+    let actualCustomerId = customer_id
+    let actualCnpj = cnpj
+    
+    // Se customer_id parece ser um CNPJ (14 dígitos), mover para cnpj
+    if (customer_id && typeof customer_id === 'string') {
+      const cleanCustomerId = customer_id.replace(/[^\d]/g, '')
+      if (cleanCustomerId.length === 14) {
+        actualCnpj = customer_id
+        actualCustomerId = null
+        console.log('🔍 Debug - customer_id detectado como CNPJ:', customer_id)
+      }
+    }
+
     // Validar se pelo menos um parâmetro foi fornecido
-    if (!customer_id && !cnpj) {
+    if (!actualCustomerId && !actualCnpj) {
       return new Response(
         JSON.stringify({ 
           success: false,
@@ -40,20 +54,20 @@ Deno.serve(async (req: Request) => {
     let customerError = null
     let searchCriteria = ''
 
-    if (customer_id) {
+    if (actualCustomerId) {
       // Busca por código do cliente
       const { data, error } = await supabase
         .from('clientes_atacamax')
         .select('codpessoa, nome, cpfcgc')
-        .eq('codpessoa', customer_id)
+        .eq('codpessoa', actualCustomerId)
         .single()
       
       customer = data
       customerError = error
-      searchCriteria = `código ${customer_id}`
-    } else if (cnpj) {
+      searchCriteria = `código ${actualCustomerId}`
+    } else if (actualCnpj) {
       // Limpar formatação do CNPJ de entrada
-      const cleanInputCnpj = cnpj.replace(/[^\d]/g, '')
+      const cleanInputCnpj = actualCnpj.replace(/[^\d]/g, '')
       
       if (cleanInputCnpj.length !== 14) {
         return new Response(
@@ -62,7 +76,7 @@ Deno.serve(async (req: Request) => {
             error: 'INVALID_CNPJ_FORMAT',
             message: 'CNPJ inválido',
             details: 'O CNPJ deve conter exatamente 14 dígitos',
-            cnpj: cnpj
+            cnpj: actualCnpj
           }),
           {
             status: 200,
@@ -84,11 +98,11 @@ Deno.serve(async (req: Request) => {
       
       // Se não encontrou, tenta busca com formatação original
       if (!data && !error) {
-        console.log('🔍 Debug - Tentando busca com CNPJ original:', cnpj)
+        console.log('🔍 Debug - Tentando busca com CNPJ original:', actualCnpj)
         const result2 = await supabase
           .from('clientes_atacamax')
           .select('codpessoa, nome, cpfcgc')
-          .eq('cpfcgc', cnpj)
+          .eq('cpfcgc', actualCnpj)
           .maybeSingle()
         
         data = result2.data
@@ -126,7 +140,7 @@ Deno.serve(async (req: Request) => {
       customer = data
       customerError = error
       
-      searchCriteria = `CNPJ ${cnpj}`
+      searchCriteria = `CNPJ ${actualCnpj}`
     }
 
     if (customerError || !customer) {
@@ -137,8 +151,8 @@ Deno.serve(async (req: Request) => {
           message: 'Cliente não encontrado',
           details: `O cliente com ${searchCriteria} não existe no sistema`,
           search_criteria: searchCriteria,
-          customer_id: customer_id || null,
-          cnpj: cnpj || null,
+          customer_id: actualCustomerId || null,
+          cnpj: actualCnpj || null,
           debug_error: customerError?.message || 'Nenhum erro específico'
         }),
         {
