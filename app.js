@@ -81,7 +81,7 @@ if (!token) {
 }
 
 const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
-  db: { schema: "public" }
+  db: { schema: "demo" }
 });
 
 let session = null;

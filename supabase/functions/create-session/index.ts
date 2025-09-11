@@ -15,7 +15,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      db: { schema: 'public' }
+      db: { schema: 'demo' }
     })
 
     const { customer_id, cnpj } = await req.json()
