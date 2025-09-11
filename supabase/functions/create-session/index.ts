@@ -71,15 +71,28 @@ Deno.serve(async (req: Request) => {
         )
       }
 
-      // Busca por CNPJ usando função para limpar formatação
+      // Busca por CNPJ usando função para limpar formatação no PostgreSQL
       const { data, error } = await supabase
         .from('clientes_atacamax')
         .select('codpessoa, nome, cpfcgc')
-        .eq('regexp_replace(cpfcgc, \'[^0-9]\', \'\', \'g\')', cleanInputCnpj)
+        .filter('cpfcgc', 'eq', cleanInputCnpj)
         .single()
       
-      customer = data
-      customerError = error
+      // Se não encontrou com busca direta, tenta com regex
+      if (error && error.code === 'PGRST116') {
+        const { data: dataRegex, error: errorRegex } = await supabase
+          .from('clientes_atacamax')
+          .select('codpessoa, nome, cpfcgc')
+          .filter('regexp_replace(cpfcgc, \'[^0-9]\', \'\', \'g\')', 'eq', cleanInputCnpj)
+          .single()
+        
+        customer = dataRegex
+        customerError = errorRegex
+      } else {
+        customer = data
+        customerError = error
+      }
+      
       searchCriteria = `CNPJ ${cnpj}`
     }
 
@@ -92,7 +105,8 @@ Deno.serve(async (req: Request) => {
           details: `O cliente com ${searchCriteria} não existe no sistema`,
           search_criteria: searchCriteria,
           customer_id: customer_id || null,
-          cnpj: cnpj || null
+          cnpj: cnpj || null,
+          debug_error: customerError?.message || 'Nenhum erro específico'
         }),
         {
           status: 200,
@@ -101,12 +115,11 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Cliente existe, prosseguir com a criação da sessão
-    // Verificar se existem produtos disponíveis para este cliente
+    // Cliente existe, verificar se existem produtos disponíveis
     const { data: products, error: productsError } = await supabase
       .from('produtos_atacamax')
       .select('codprodfilho')
-      .eq('ativo', true)
+      .eq('ativo', 'S')
       .limit(1)
 
     if (productsError) {
@@ -116,7 +129,8 @@ Deno.serve(async (req: Request) => {
           error: 'PRODUCTS_QUERY_ERROR',
           message: 'Erro ao consultar produtos',
           details: productsError.message,
-          customer_id: customer.codpessoa
+          customer_id: customer.codpessoa,
+          debug_query: 'produtos_atacamax com ativo = S'
         }),
         {
           status: 200,
@@ -130,10 +144,11 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({ 
           success: false,
           error: 'NO_PRODUCTS_AVAILABLE',
-          message: 'Nenhum produto disponível',
-          details: 'Não foram encontrados produtos ativos no sistema para criar um pedido',
+          message: 'Nenhum produto ativo disponível',
+          details: 'Não foram encontrados produtos com ativo = "S" no sistema',
           customer_id: customer.codpessoa,
-          customer_name: customer.nome
+          customer_name: customer.nome,
+          debug_info: 'Verificando produtos_atacamax.ativo = "S"'
         }),
         {
           status: 200,
