@@ -115,22 +115,63 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Cliente existe, verificar se existem produtos disponíveis
-    const { data: products, error: productsError } = await supabase
+    // Cliente existe, buscar produtos do último pedido na view
+    const { data: lastOrderProducts, error: lastOrderError } = await supabase
+      .from('v_last_order_by_product_atacamax')
+      .select('codprodfilho, qty')
+      .eq('codpessoa', customer.codpessoa)
+
+    if (lastOrderError) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'LAST_ORDER_QUERY_ERROR',
+          message: 'Erro ao consultar último pedido',
+          details: lastOrderError.message,
+          customer_id: customer.codpessoa,
+          debug_query: 'v_last_order_by_product_atacamax'
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    if (!lastOrderProducts || lastOrderProducts.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'NO_LAST_ORDER_FOUND',
+          message: 'Nenhum pedido anterior encontrado',
+          details: 'Não foram encontrados produtos no último pedido deste cliente',
+          customer_id: customer.codpessoa,
+          customer_name: customer.nome
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    // Buscar preços atuais dos produtos
+    const productIds = lastOrderProducts.map(p => p.codprodfilho)
+    const { data: currentProducts, error: productsError } = await supabase
       .from('produtos_atacamax')
-      .select('codprodfilho')
+      .select('codprodfilho, descricao, referencia, gtin, preco3, promo3, ativo')
+      .in('codprodfilho', productIds)
       .eq('ativo', 'S')
-      .limit(1)
 
     if (productsError) {
       return new Response(
         JSON.stringify({ 
           success: false,
           error: 'PRODUCTS_QUERY_ERROR',
-          message: 'Erro ao consultar produtos',
+          message: 'Erro ao consultar produtos atuais',
           details: productsError.message,
           customer_id: customer.codpessoa,
-          debug_query: 'produtos_atacamax com ativo = S'
+          product_ids: productIds
         }),
         {
           status: 200,
@@ -139,16 +180,16 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    if (!products || products.length === 0) {
+    if (!currentProducts || currentProducts.length === 0) {
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: 'NO_PRODUCTS_AVAILABLE',
-          message: 'Nenhum produto ativo disponível',
-          details: 'Não foram encontrados produtos com ativo = "S" no sistema',
+          error: 'NO_ACTIVE_PRODUCTS_FOUND',
+          message: 'Nenhum produto ativo encontrado',
+          details: 'Os produtos do último pedido não estão mais ativos no sistema',
           customer_id: customer.codpessoa,
           customer_name: customer.nome,
-          debug_info: 'Verificando produtos_atacamax.ativo = "S"'
+          requested_products: productIds.length
         }),
         {
           status: 200,
@@ -157,7 +198,10 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Produtos disponíveis, prosseguir com a criação da sessão
+    // Criar mapa de produtos atuais por ID
+    const productsMap = new Map(currentProducts.map(p => [p.codprodfilho, p]))
+
+    // Criar sessão
     const expiresAt = new Date()
     expiresAt.setHours(expiresAt.getHours() + 24) // Expira em 24 horas
 
@@ -187,9 +231,47 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Usar o session_id diretamente como token (mais simples e confiável)
-    const token = session.id
+    // Criar itens do pedido com quantidades do último pedido e preços atuais
+    const orderItems = lastOrderProducts
+      .map(lastProduct => {
+        const currentProduct = productsMap.get(lastProduct.codprodfilho)
+        if (!currentProduct) return null // Produto não está mais ativo
+        
+        return {
+          session_id: session.id,
+          product_id: lastProduct.codprodfilho,
+          qty: lastProduct.qty || 1
+        }
+      })
+      .filter(Boolean) // Remove produtos nulos
 
+    if (orderItems.length > 0) {
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems)
+
+      if (itemsError) {
+        // Se falhar ao criar itens, remove a sessão criada
+        await supabase.from('order_sessions').delete().eq('id', session.id)
+        
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'ORDER_ITEMS_CREATION_FAILED',
+            message: 'Erro ao criar itens do pedido',
+            details: itemsError.message,
+            session_id: session.id
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        )
+      }
+    }
+
+    // Usar o session_id diretamente como token
+    const token = session.id
     const orderUrl = `${req.headers.get('origin') || 'https://stellar-cranachan-2b11bb.netlify.app'}/?token=${token}`
 
     return new Response(
@@ -204,9 +286,11 @@ Deno.serve(async (req: Request) => {
           },
           expires_at: session.expires_at,
           order_url: orderUrl,
-          token: token
+          token: token,
+          items_loaded: orderItems.length,
+          total_products_found: currentProducts.length
         },
-        message: `Sessão criada com sucesso para ${customer.nome}`
+        message: `Sessão criada com sucesso para ${customer.nome} com ${orderItems.length} itens do último pedido`
       }),
       {
         status: 200,
