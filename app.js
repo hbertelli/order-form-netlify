@@ -508,11 +508,30 @@ async function saveChanges(){
   document.body.classList.remove('loading');
 }
 async function submitOrder(){
+  console.log('🚀 Enviando pedido...');
+  console.log('🔍 Token usado:', token);
+  console.log('🔍 URL da função:', `${cfg.FUNCTIONS_BASE}/submit-order`);
+  
   const res = await fetch(`${cfg.FUNCTIONS_BASE}/submit-order`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { 
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
   });
-  if (!res.ok) throw new Error(`Falha ao enviar pedido: ${res.status}`);
+  
+  console.log('🔍 Status da resposta:', res.status);
+  console.log('🔍 Headers da resposta:', Object.fromEntries(res.headers.entries()));
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('❌ Erro na resposta:', errorText);
+    throw new Error(`Falha ao enviar pedido: ${res.status} - ${errorText}`);
+  }
+  
+  const result = await res.json();
+  console.log('✅ Resposta da função:', result);
+  
 }
 
 /* ---------- boot ---------- */

@@ -5,8 +5,12 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 Deno.serve(async (req: Request) => {
+  console.log('🔍 Submit-order - Método:', req.method)
+  console.log('🔍 Submit-order - Headers:', Object.fromEntries(req.headers.entries()))
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('🔍 Submit-order - Respondendo OPTIONS')
     return new Response(null, {
       status: 200,
       headers: corsHeaders,
@@ -14,13 +18,18 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    console.log('🔍 Submit-order - Iniciando processamento')
+    
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       db: { schema: 'demo' }
     })
 
     // Extrair token do header Authorization
     const authHeader = req.headers.get('Authorization')
+    console.log('🔍 Submit-order - Auth header:', authHeader)
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('❌ Submit-order - Token não fornecido ou formato inválido')
       return new Response(
         JSON.stringify({ 
           success: false,
@@ -28,7 +37,7 @@ Deno.serve(async (req: Request) => {
           message: 'Token de autorização não fornecido'
         }),
         {
-          status: 401,
+          status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
