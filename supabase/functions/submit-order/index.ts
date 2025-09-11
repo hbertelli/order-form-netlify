@@ -25,6 +25,26 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // Verificar se tem apikey ou authorization header
+    const apikey = req.headers.get('apikey')
+    const authHeader = req.headers.get('authorization')
+    
+    if (!apikey && !authHeader) {
+      console.log('❌ Submit-order - Nenhum header de autenticação encontrado')
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'MISSING_AUTH_HEADER',
+          message: 'Header de autenticação obrigatório (apikey ou authorization)'
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+    
+    console.log('🔍 Submit-order - Auth header presente:', !!authHeader, 'ApiKey presente:', !!apikey)
     console.log('🔍 Submit-order - Iniciando processamento')
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
