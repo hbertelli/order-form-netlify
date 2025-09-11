@@ -201,7 +201,7 @@ Deno.serve(async (req: Request) => {
     // Por simplicidade, vou usar o session.id como token temporário
     const token = btoa(JSON.stringify(payload))
 
-    const orderUrl = `${req.headers.get('origin') || 'https://your-domain.com'}/?token=${token}`
+    const orderUrl = `${req.headers.get('origin') || 'https://stellar-cranachan-2b11bb.netlify.app'}/?token=${token}`
 
     return new Response(
       JSON.stringify({
