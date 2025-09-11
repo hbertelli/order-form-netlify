@@ -192,7 +192,7 @@ function renderItems(){
 
     const del = document.createElement("button");
     del.className = "btn-remove";
-    del.textContent = "Remover";
+    del.innerHTML = "🗑️ Remover";
     del.addEventListener("click", () => {
       items.splice(idx, 1);
       renderItems();
@@ -233,6 +233,10 @@ function mountFooter(){
 /* ---------- persist / submit ---------- */
 async function saveChanges(){
   if (!session) return;
+  
+  // Add loading state
+  document.body.classList.add('loading');
+  
   await supabase.from("order_items").delete().eq("session_id", session.id);
   const payload = items
     .filter(it => (it.qty ?? 0) > 0)
@@ -241,6 +245,9 @@ async function saveChanges(){
     const { error } = await supabase.from("order_items").insert(payload);
     if (error) throw error;
   }
+  
+  // Remove loading state
+  document.body.classList.remove('loading');
 }
 async function submitOrder(){
   const res = await fetch(`${cfg.FUNCTIONS_BASE}/submit-order`, {
