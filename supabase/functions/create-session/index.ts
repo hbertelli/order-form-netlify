@@ -71,28 +71,60 @@ Deno.serve(async (req: Request) => {
         )
       }
 
-      // Busca por CNPJ usando função para limpar formatação no PostgreSQL
-      const { data, error } = await supabase
-        .from('clientes_atacamax')
-        .select('cod_cliente, nome, cpfcgc')
-        .filter('cpfcgc', 'eq', cleanInputCnpj)
-        .single()
+      console.log('🔍 Debug - Buscando CNPJ:', cleanInputCnpj)
       
-      // Se não encontrou com busca direta, tenta com regex
-      if (error && error.code === 'PGRST116') {
-        const { data: dataRegex, error: errorRegex } = await supabase
+      // Primeira tentativa: busca direta por CNPJ limpo
+      let { data, error } = await supabase
+        .from('clientes_atacamax')
+        .select('codpessoa, nome, cpfcgc')
+        .eq('cpfcgc', cleanInputCnpj)
+        .maybeSingle()
+      
+      console.log('🔍 Debug - Busca direta resultado:', { data, error })
+      
+      // Se não encontrou, tenta busca com formatação original
+      if (!data && !error) {
+        console.log('🔍 Debug - Tentando busca com CNPJ original:', cnpj)
+        const result2 = await supabase
           .from('clientes_atacamax')
           .select('codpessoa, nome, cpfcgc')
-          .filter('regexp_replace(cpfcgc, \'[^0-9]\', \'\', \'g\')', 'eq', cleanInputCnpj)
-          .single()
+          .eq('cpfcgc', cnpj)
+          .maybeSingle()
         
-        customer = dataRegex
-        customerError = errorRegex
-      } else {
-        customer = data
-        customerError = error
-          .select('codpessoa, nome, cpfcgc')
+        data = result2.data
+        error = result2.error
+        console.log('🔍 Debug - Busca com formatação resultado:', { data, error })
       }
+      
+      // Se ainda não encontrou, tenta busca com LIKE para encontrar padrões similares
+      if (!data && !error) {
+        console.log('🔍 Debug - Tentando busca com LIKE')
+        const result3 = await supabase
+          .from('clientes_atacamax')
+          .select('codpessoa, nome, cpfcgc')
+          .like('cpfcgc', `%${cleanInputCnpj}%`)
+          .limit(5)
+        
+        console.log('🔍 Debug - Busca LIKE resultado:', result3)
+        
+        if (result3.data && result3.data.length === 1) {
+          data = result3.data[0]
+          error = result3.error
+        } else if (result3.data && result3.data.length > 1) {
+          console.log('🔍 Debug - Múltiplos resultados encontrados:', result3.data.map(c => ({ id: c.codpessoa, cnpj: c.cpfcgc })))
+          // Tenta encontrar match exato nos resultados
+          const exactMatch = result3.data.find(c => 
+            c.cpfcgc?.replace(/[^\d]/g, '') === cleanInputCnpj
+          )
+          if (exactMatch) {
+            data = exactMatch
+            error = null
+          }
+        }
+      }
+      
+      customer = data
+      customerError = error
       
       searchCriteria = `CNPJ ${cnpj}`
     }
