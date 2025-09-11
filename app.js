@@ -82,14 +82,17 @@ if (!token) {
 
 const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
   db: { schema: "demo" },
-  global: {
-    headers: {
-      apikey: cfg.SUPABASE_ANON,
-      Authorization: `Bearer ${token}`,
-    },
-  },
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
 });
 
+// Definir a sessão manualmente com o token JWT
+await supabase.auth.setSession({
+  access_token: token,
+  refresh_token: token
+});
 
 let session = null;
 let items   = [];
