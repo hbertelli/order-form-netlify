@@ -44,7 +44,7 @@ Deno.serve(async (req: Request) => {
       // Busca por código do cliente
       const { data, error } = await supabase
         .from('clientes_atacamax')
-        .select('cod_cliente, nome, cpfcgc')
+        .select('codpessoa, nome, cpfcgc')
         .eq('codpessoa', customer_id)
         .single()
       
@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
       if (error && error.code === 'PGRST116') {
         const { data: dataRegex, error: errorRegex } = await supabase
           .from('clientes_atacamax')
-          .select('cod_cliente, nome, cpfcgc')
+          .select('codpessoa, nome, cpfcgc')
           .filter('regexp_replace(cpfcgc, \'[^0-9]\', \'\', \'g\')', 'eq', cleanInputCnpj)
           .single()
         
@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
       } else {
         customer = data
         customerError = error
-      }
+          .select('codpessoa, nome, cpfcgc')
       
       searchCriteria = `CNPJ ${cnpj}`
     }
@@ -119,7 +119,7 @@ Deno.serve(async (req: Request) => {
     const { data: lastOrderProducts, error: lastOrderError } = await supabase
       .from('v_last_order_by_product_atacamax')
       .select('cod_cliente, codprodfilho, qtde')
-      .eq('cod_cliente', customer.cod_cliente)
+      .eq('cod_cliente', customer.codpessoa)
 
     if (lastOrderError) {
       return new Response(
@@ -128,7 +128,7 @@ Deno.serve(async (req: Request) => {
           error: 'LAST_ORDER_QUERY_ERROR',
           message: 'Erro ao consultar último pedido',
           details: lastOrderError.message,
-          customer_id: customer.cod_cliente,
+          customer_id: customer.codpessoa,
           debug_query: 'v_last_order_by_product_atacamax'
         }),
         {
@@ -139,7 +139,7 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log('🔍 Debug - Customer object:', customer)
-    console.log('🔍 Debug - Customer ID usado na query:', customer.cod_cliente)
+    console.log('🔍 Debug - Customer ID usado na query:', customer.codpessoa)
     console.log('🔍 Debug - Last order products found:', lastOrderProducts?.length || 0)
 
     if (!lastOrderProducts || lastOrderProducts.length === 0) {
@@ -149,7 +149,7 @@ Deno.serve(async (req: Request) => {
           error: 'NO_LAST_ORDER_FOUND',
           message: 'Nenhum pedido anterior encontrado',
           details: 'Não foram encontrados produtos no último pedido deste cliente',
-          customer_id: customer.cod_cliente,
+          customer_id: customer.codpessoa,
           customer_name: customer.nome
         }),
         {
@@ -174,7 +174,7 @@ Deno.serve(async (req: Request) => {
           error: 'PRODUCTS_QUERY_ERROR',
           message: 'Erro ao consultar produtos atuais',
           details: productsError.message,
-          customer_id: customer.cod_cliente,
+          customer_id: customer.codpessoa,
           product_ids: productIds
         }),
         {
@@ -191,7 +191,7 @@ Deno.serve(async (req: Request) => {
           error: 'NO_ACTIVE_PRODUCTS_FOUND',
           message: 'Nenhum produto ativo encontrado',
           details: 'Os produtos do último pedido não estão mais ativos no sistema',
-          customer_id: customer.cod_cliente,
+          customer_id: customer.codpessoa,
           customer_name: customer.nome,
           requested_products: productIds.length
         }),
@@ -212,7 +212,7 @@ Deno.serve(async (req: Request) => {
     const { data: session, error: sessionError } = await supabase
       .from('order_sessions')
       .insert({
-        customer_id: customer.cod_cliente,
+        customer_id: customer.codpessoa,
         expires_at: expiresAt.toISOString(),
         used: false
       }
@@ -228,7 +228,7 @@ Deno.serve(async (req: Request) => {
           error: 'SESSION_CREATION_FAILED',
           message: 'Erro ao criar sessão',
           details: sessionError.message,
-          customer_id: customer.cod_cliente
+          customer_id: customer.codpessoa
         }),
         {
           status: 200,
@@ -286,7 +286,7 @@ Deno.serve(async (req: Request) => {
         data: {
           session_id: session.id,
           customer: {
-            id: customer.cod_cliente,
+             id: customer.codpessoa,
             name: customer.nome,
             cnpj: customer.cpfcgc
           },
