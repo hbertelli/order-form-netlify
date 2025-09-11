@@ -84,7 +84,8 @@ const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
   db: { schema: "demo" },
   global: {
     headers: {
-      'apikey': cfg.SUPABASE_ANON
+      'apikey': cfg.SUPABASE_ANON,
+      'Authorization': `Bearer ${token}`
     }
   }
 });
@@ -254,7 +255,7 @@ async function loadSession(){
   console.log('🔍 Testando acesso à tabela order_sessions...');
   const { data: testData, error: testError } = await supabase
     .from("order_sessions")
-    .select("count")
+    .select("id")
     .limit(1);
   
   console.log('📊 Teste de acesso à tabela:', { 
@@ -274,9 +275,10 @@ async function loadSession(){
   }
   
   // Agora tenta buscar a sessão específica
+  console.log('🔍 Buscando sessão específica...');
   const { data, error } = await supabase
     .from("order_sessions")
-    .select("id, expires_at, used, created_at")
+    .select("id, expires_at, used, created_at, customer_id")
     .eq("id", token)
     .maybeSingle();
   
@@ -308,7 +310,7 @@ async function loadSession(){
     console.log('🔍 Buscando todas as sessões para debug...');
     const { data: allSessions, error: allError } = await supabase
       .from("order_sessions")
-      .select("id, expires_at, used, created_at")
+      .select("id, expires_at, used, created_at, customer_id")
       .limit(10);
     
     console.log('📊 Todas as sessões encontradas:', { 
@@ -317,12 +319,23 @@ async function loadSession(){
       totalFound: allSessions?.length || 0
     });
     
-    if (allSessions && allSessions.length > 0) {
-      console.log('🔍 Comparando tokens:');
-      allSessions.forEach((session, index) => {
-        console.log(`  ${index + 1}. DB: "${session.id}" vs URL: "${token}" - Match: ${session.id === token}`);
-      });
-    }
+    // Tentar buscar sem RLS para debug
+    console.log('🔍 Tentando buscar sessão sem RLS (usando service key)...');
+    const debugSupabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
+      db: { schema: "demo" }
+    });
+    
+    const { data: debugData, error: debugError } = await debugSupabase
+      .from("order_sessions")
+      .select("id, expires_at, used, created_at, customer_id")
+      .eq("id", token)
+      .maybeSingle();
+    
+    console.log('📊 Debug sem RLS:', { 
+      debugData, 
+      debugError,
+      foundWithoutRLS: !!debugData
+    });
     
     showErrorPage(
       "Sessão Não Encontrada",
