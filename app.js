@@ -81,7 +81,7 @@ if (!token) {
 }
 
 const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
-  db: { schema: "demo" }
+  db: { schema: "demo" },
   global: {
     headers: {
       'apikey': cfg.SUPABASE_ANON
