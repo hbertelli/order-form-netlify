@@ -92,6 +92,7 @@ Deno.serve(async (req: Request) => {
         customer = data
         customerError = error
           .select('codpessoa, nome, cpfcgc')
+      }
       
       searchCriteria = `CNPJ ${cnpj}`
     }
