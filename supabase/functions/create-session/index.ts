@@ -187,7 +187,12 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Gerar JWT token com claim personalizado
+    // Gerar JWT token usando a chave de serviço do Supabase
+    const header = {
+      alg: 'HS256',
+      typ: 'JWT'
+    }
+
     const payload = {
       iss: 'supabase',
       ref: supabaseUrl.split('//')[1].split('.')[0],
@@ -197,9 +202,38 @@ Deno.serve(async (req: Request) => {
       sid: session.id // Custom claim para RLS
     }
 
-    // Aqui você precisaria implementar a assinatura JWT
-    // Por simplicidade, vou usar o session.id como token temporário
-    const token = btoa(JSON.stringify(payload))
+    // Função para criar JWT simples
+    const base64UrlEncode = (obj: any) => {
+      return btoa(JSON.stringify(obj))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '')
+    }
+
+    const headerEncoded = base64UrlEncode(header)
+    const payloadEncoded = base64UrlEncode(payload)
+
+    // Criar assinatura usando HMAC SHA-256 (simplificado)
+    const message = `${headerEncoded}.${payloadEncoded}`
+    
+    // Para desenvolvimento, vamos usar uma assinatura simples
+    // Em produção, você deveria usar uma biblioteca de JWT adequada
+    const encoder = new TextEncoder()
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(supabaseServiceKey),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    )
+    
+    const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(message))
+    const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '')
+
+    const token = `${message}.${signatureBase64}`
 
     const orderUrl = `${req.headers.get('origin') || 'https://stellar-cranachan-2b11bb.netlify.app'}/?token=${token}`
 
