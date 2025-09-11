@@ -515,7 +515,7 @@ async function submitOrder(){
   const res = await fetch(`${cfg.FUNCTIONS_BASE}/submit-order`, {
     method: "POST",
     headers: { 
-      'Authorization': `Bearer ${cfg.SUPABASE_ANON}`,
+      'apikey': cfg.SUPABASE_ANON,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
