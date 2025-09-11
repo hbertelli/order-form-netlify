@@ -248,7 +248,32 @@ async function loadSession(){
   console.log('🔍 Tentando carregar sessão com token:', token);
   console.log('🔍 Configuração Supabase URL:', cfg.SUPABASE_URL);
   console.log('🔍 Schema configurado: demo');
+  console.log('🔍 Token é UUID válido:', /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token));
   
+  // Primeiro, vamos testar se conseguimos acessar a tabela
+  console.log('🔍 Testando acesso à tabela order_sessions...');
+  const { data: testData, error: testError } = await supabase
+    .from("order_sessions")
+    .select("count")
+    .limit(1);
+  
+  console.log('📊 Teste de acesso à tabela:', { 
+    testData, 
+    testError,
+    canAccessTable: !testError
+  });
+  
+  if (testError) {
+    console.error('❌ Erro ao acessar tabela order_sessions:', testError);
+    showErrorPage(
+      "Erro de Configuração",
+      `Não foi possível acessar a tabela de sessões. Erro: ${testError.message}`,
+      "🚫"
+    );
+    throw testError;
+  }
+  
+  // Agora tenta buscar a sessão específica
   const { data, error } = await supabase
     .from("order_sessions")
     .select("id, expires_at, used, created_at")
@@ -261,11 +286,13 @@ async function loadSession(){
     token,
     hasData: !!data,
     errorCode: error?.code,
-    errorMessage: error?.message 
+    errorMessage: error?.message,
+    queryUsed: `SELECT id, expires_at, used, created_at FROM order_sessions WHERE id = '${token}'`
   });
   
   if (error) {
     console.error('Erro na consulta:', error);
+    console.error('Detalhes completos do erro:', JSON.stringify(error, null, 2));
     showErrorPage(
       "Erro de Acesso",
       `Erro na consulta: ${error.message}. Código: ${error.code}. Verifique se a tabela 'order_sessions' existe no schema 'demo'.`,
@@ -276,9 +303,26 @@ async function loadSession(){
   
   if (!data) {
     console.warn('⚠️ Nenhuma sessão encontrada para o token:', token);
-    console.log('💡 Verificando se o token é um UUID válido...');
-    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token);
-    console.log('🔍 Token é UUID válido:', isValidUUID);
+    
+    // Vamos tentar buscar TODAS as sessões para debug
+    console.log('🔍 Buscando todas as sessões para debug...');
+    const { data: allSessions, error: allError } = await supabase
+      .from("order_sessions")
+      .select("id, expires_at, used, created_at")
+      .limit(10);
+    
+    console.log('📊 Todas as sessões encontradas:', { 
+      allSessions, 
+      allError,
+      totalFound: allSessions?.length || 0
+    });
+    
+    if (allSessions && allSessions.length > 0) {
+      console.log('🔍 Comparando tokens:');
+      allSessions.forEach((session, index) => {
+        console.log(`  ${index + 1}. DB: "${session.id}" vs URL: "${token}" - Match: ${session.id === token}`);
+      });
+    }
     
     showErrorPage(
       "Sessão Não Encontrada",
