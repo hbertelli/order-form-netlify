@@ -1,9 +1,0 @@
-[build]
-  publish = "."
-  command = ""
-
-# Redirecionar 404 para index.html (não é SPA, mas ajuda em rotas com query)
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
