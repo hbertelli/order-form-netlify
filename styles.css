@@ -336,30 +336,30 @@ main {
   letter-spacing: 0.025em;
 }
 
-#save-btn {
+#main-save-btn, #footer-save-btn {
   background: var(--gray-100);
   color: var(--gray-700);
   border: 1px solid var(--gray-200);
 }
 
-#save-btn:hover {
+#main-save-btn:hover, #footer-save-btn:hover {
   background: var(--gray-200);
   transform: translateY(-1px);
 }
 
-#submit-btn {
+#main-submit-btn, #footer-submit-btn {
   background: linear-gradient(135deg, var(--success) 0%, #047857 100%);
   color: white;
   box-shadow: var(--shadow);
 }
 
-#submit-btn:hover {
+#main-submit-btn:hover, #footer-submit-btn:hover {
   background: linear-gradient(135deg, #047857 0%, #065f46 100%);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
-#submit-btn:disabled {
+#main-submit-btn:disabled, #footer-submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
