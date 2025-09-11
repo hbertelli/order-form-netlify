@@ -82,16 +82,11 @@ if (!token) {
 
 const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
   db: { schema: "demo" },
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
+  global: {
+    headers: {
+      'x-session-id': token
+    }
   }
-});
-
-// Definir a sessão manualmente com o token JWT
-await supabase.auth.setSession({
-  access_token: token,
-  refresh_token: token
 });
 
 let session = null;
@@ -252,7 +247,8 @@ function updateActionBarsVisibility() {
 async function loadSession(){
   const { data, error } = await supabase
     .from("order_sessions")
-    .select("id, expires_at, used, created_at")
+    .select("id, expires_at, used, created_at") 
+    .eq("id", token)
     .single();
   
   if (error) {
