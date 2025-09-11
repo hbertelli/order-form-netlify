@@ -211,6 +211,8 @@ Deno.serve(async (req: Request) => {
         customer_id: customer.cod_cliente,
         expires_at: expiresAt.toISOString(),
         used: false
+      }
+      )
       .select('cod_cliente, nome, cpfcgc')
       .eq('cod_cliente', customer_id)
       .single()
