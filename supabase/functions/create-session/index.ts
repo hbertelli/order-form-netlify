@@ -118,7 +118,7 @@ Deno.serve(async (req: Request) => {
     // Cliente existe, buscar produtos do último pedido na view
     const { data: lastOrderProducts, error: lastOrderError } = await supabase
       .from('v_last_order_by_product_atacamax')
-      .select('codprodfilho, qty')
+      .select('codprodfilho, qtde')
       .eq('codpessoa', customer.codpessoa)
 
     if (lastOrderError) {
@@ -240,7 +240,7 @@ Deno.serve(async (req: Request) => {
         return {
           session_id: session.id,
           product_id: lastProduct.codprodfilho,
-          qty: lastProduct.qty || 1
+          qty: lastProduct.qtde || 1
         }
       })
       .filter(Boolean) // Remove produtos nulos
