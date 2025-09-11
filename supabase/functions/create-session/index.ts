@@ -89,8 +89,9 @@ Deno.serve(async (req: Request) => {
       
       // Função para formatar CNPJ
       const formatCnpj = (cnpj) => {
-        if (cnpj.length !== 14) return cnpj
-        return `${cnpj.substring(0,2)}.${cnpj.substring(2,5)}.${cnpj.substring(5,8)}/${cnpj.substring(8,12)}-${cnpj.substring(12,14)}`
+        const clean = cnpj.replace(/[^\d]/g, '')
+        if (clean.length !== 14) return cnpj
+        return `${clean.substring(0,2)}.${clean.substring(2,5)}.${clean.substring(5,8)}/${clean.substring(8,12)}-${clean.substring(12,14)}`
       }
       
       const formattedCnpj = formatCnpj(cleanInputCnpj)
