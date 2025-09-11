@@ -218,8 +218,7 @@ Deno.serve(async (req: Request) => {
         used: false
       }
       )
-      .select('cod_cliente, nome, cpfcgc')
-      .eq('cod_cliente', customer_id)
+      .select('id, customer_id, expires_at, used, created_at')
       .single()
 
     if (sessionError) {
