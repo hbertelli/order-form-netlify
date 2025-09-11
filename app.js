@@ -509,15 +509,18 @@ async function saveChanges(){
 }
 async function submitOrder(){
   console.log('🚀 Enviando pedido...');
-  console.log('🔍 Token usado:', token);
+  console.log('🔍 Session ID usado:', token);
   console.log('🔍 URL da função:', `${cfg.FUNCTIONS_BASE}/submit-order`);
   
   const res = await fetch(`${cfg.FUNCTIONS_BASE}/submit-order`, {
     method: "POST",
     headers: { 
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${cfg.SUPABASE_ANON}`,
       'Content-Type': 'application/json'
-    }
+    },
+    body: JSON.stringify({
+      session_id: token
+    })
   });
   
   console.log('🔍 Status da resposta:', res.status);

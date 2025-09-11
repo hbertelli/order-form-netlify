@@ -14,6 +14,7 @@ const customCorsHeaders = {
 Deno.serve(async (req: Request) => {
   console.log('🔍 Submit-order - Método:', req.method)
   console.log('🔍 Submit-order - Headers:', Object.fromEntries(req.headers.entries()))
+  console.log('🔍 Submit-order - URL:', req.url)
   
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -31,17 +32,35 @@ Deno.serve(async (req: Request) => {
       db: { schema: 'demo' }
     })
 
-    // Extrair token do header Authorization
-    const authHeader = req.headers.get('Authorization')
-    console.log('🔍 Submit-order - Auth header:', authHeader)
+    // Extrair session_id do body da requisição ao invés do header Authorization
+    let sessionId
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('❌ Submit-order - Token não fornecido ou formato inválido')
+    try {
+      const body = await req.json()
+      sessionId = body.session_id
+      console.log('🔍 Submit-order - Session ID do body:', sessionId)
+    } catch (error) {
+      console.log('❌ Submit-order - Erro ao ler body:', error)
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: 'MISSING_TOKEN',
-          message: 'Token de autorização não fornecido'
+          error: 'INVALID_REQUEST_BODY',
+          message: 'Corpo da requisição inválido'
+        }),
+        {
+          status: 400,
+          headers: { ...customCorsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+    
+    if (!sessionId) {
+      console.log('❌ Submit-order - Session ID não fornecido')
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'MISSING_SESSION_ID',
+          message: 'Session ID não fornecido'
         }),
         {
           status: 400,
@@ -50,8 +69,7 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    const sessionId = authHeader.replace('Bearer ', '')
-    console.log('🔍 Debug - Session ID recebido:', sessionId)
+    console.log('🔍 Submit-order - Session ID recebido:', sessionId)
 
     // Verificar se a sessão existe e não foi usada
     const { data: session, error: sessionError } = await supabase
