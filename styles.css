@@ -424,31 +424,41 @@ footer {
   letter-spacing: 0.025em;
 }
 
-.buttons #save-btn {
+.buttons #footer-save-btn {
   background: var(--gray-100);
   color: var(--gray-700);
   border: 1px solid var(--gray-200);
 }
 
-.buttons #save-btn:hover {
+.buttons #footer-save-btn:hover {
   background: var(--gray-200);
 }
 
-.buttons #submit-btn {
+.buttons #footer-submit-btn {
   background: linear-gradient(135deg, var(--success) 0%, #047857 100%);
   color: white;
   box-shadow: var(--shadow);
 }
 
-.buttons #submit-btn:hover {
+.buttons #footer-submit-btn:hover {
   background: linear-gradient(135deg, #047857 0%, #065f46 100%);
   transform: translateY(-1px);
 }
 
-.buttons #submit-btn:disabled {
+.buttons #footer-submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+}
+
+/* Smooth transitions for action bars */
+.actions-bar {
+  transition: all 0.3s ease;
+}
+
+.actions-bar.hidden {
+  transform: translateY(100%);
+  opacity: 0;
 }
 
 /* Responsive design */

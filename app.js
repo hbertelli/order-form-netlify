@@ -8,8 +8,6 @@ const alertBox    = document.getElementById("alert");
 const itemsList   = document.getElementById("items-list");
 const sessionInfo = document.getElementById("session-info");
 const emptyHint   = document.getElementById("empty-hint");
-const saveBtn     = document.getElementById("save-btn");
-const submitBtn   = document.getElementById("submit-btn");
 
 function showAlert(msg){ alertBox.textContent = msg || ""; alertBox.style.display = msg ? "block":"none"; }
 function fmtDate(s){ try{ return new Date(s).toLocaleString("pt-BR",{ timeZone:"America/Sao_Paulo" }); } catch { return s; } }
@@ -56,7 +54,7 @@ function updateTotalsBoth(){
   const sum = items.reduce((s,it)=> s + ((it.unit_price ?? 0) * (it.qty ?? 0)), 0);
   const txt = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(sum);
 
-  const pageTotal   = document.getElementById('order-total');  // total “estático”
+  const pageTotal   = document.getElementById('order-total');  // total "estático"
   const footerTotal = document.getElementById('footer-total'); // total da barra flutuante
 
   if (pageTotal)   pageTotal.textContent   = txt;
@@ -64,14 +62,24 @@ function updateTotalsBoth(){
 }
 
 // --- envio (usa mesmo handler nos dois botões, se existirem) ---
-let footerSubmit = null;   // <<< GARANTA ESTA LINHA (global)
 let isSubmitting = false;
 
 function setSubmitting(on){
   isSubmitting = on;
-  const txt = on ? "Enviando..." : "Enviar pedido";
-  if (footerSubmit) { footerSubmit.disabled = on; footerSubmit.textContent = txt; }
-  if (typeof submitBtn !== "undefined" && submitBtn) { submitBtn.disabled = on; submitBtn.textContent = txt; }
+  const txt = on ? "🔄 Enviando..." : "🚀 Enviar Pedido";
+  
+  // Atualiza todos os botões de envio
+  const mainSubmit = document.getElementById("main-submit-btn");
+  const footerSubmit = document.getElementById("footer-submit-btn");
+  
+  if (mainSubmit) { 
+    mainSubmit.disabled = on; 
+    mainSubmit.textContent = txt; 
+  }
+  if (footerSubmit) { 
+    footerSubmit.disabled = on; 
+    footerSubmit.textContent = txt; 
+  }
 }
 
 async function handleSubmit(){
@@ -86,6 +94,24 @@ async function handleSubmit(){
     showAlert(e.message || String(e));
   } finally {
     setSubmitting(false);
+  }
+}
+
+// Função para controlar visibilidade das barras de ação
+function updateActionBarsVisibility() {
+  const mainActions = document.querySelector('.actions');
+  const floatingBar = document.getElementById('actions-bar');
+  
+  if (!mainActions || !floatingBar) return;
+  
+  const mainActionsRect = mainActions.getBoundingClientRect();
+  const windowHeight = window.innerHeight;
+  
+  // Se a barra principal está visível na tela, esconde a flutuante
+  if (mainActionsRect.top < windowHeight && mainActionsRect.bottom > 0) {
+    floatingBar.style.display = 'none';
+  } else {
+    floatingBar.style.display = 'block';
   }
 }
 
@@ -206,26 +232,37 @@ function renderItems(){
   updateTotalsBoth();
 }
 
-
-
-
-
-/* --------- footer -----------------*/
-
-function mountFooter(){
-  // usar os elementos que já estão no HTML
-  const footerSave = document.getElementById("save-btn");
-  footerSubmit     = document.getElementById("submit-btn");  // <<< atribui à global
-
-  if (footerSave){
-    footerSave.onclick = async () => {
-      try { await saveChanges(); showAlert("Alterações salvas."); updateTotalsBoth(); }
-      catch(e){ showAlert(e.message); }
-    };
-  }
-  if (footerSubmit){
-    footerSubmit.onclick = handleSubmit; // mesmo handler do topo (se existir)
-  }
+/* ---------- event handlers ---------- */
+function setupEventHandlers() {
+  // Botões principais (na página)
+  const mainSave = document.getElementById("main-save-btn");
+  const mainSubmit = document.getElementById("main-submit-btn");
+  
+  // Botões da barra flutuante
+  const footerSave = document.getElementById("footer-save-btn");
+  const footerSubmit = document.getElementById("footer-submit-btn");
+  
+  // Handler para salvar
+  const saveHandler = async () => {
+    try { 
+      await saveChanges(); 
+      showAlert("✅ Alterações salvas com sucesso!"); 
+      updateTotalsBoth(); 
+    }
+    catch(e){ 
+      showAlert("❌ " + e.message); 
+    }
+  };
+  
+  // Conecta os handlers
+  if (mainSave) mainSave.onclick = saveHandler;
+  if (footerSave) footerSave.onclick = saveHandler;
+  if (mainSubmit) mainSubmit.onclick = handleSubmit;
+  if (footerSubmit) footerSubmit.onclick = handleSubmit;
+  
+  // Controla visibilidade das barras ao fazer scroll
+  window.addEventListener('scroll', updateActionBarsVisibility);
+  window.addEventListener('resize', updateActionBarsVisibility);
 }
 
 
@@ -263,18 +300,11 @@ async function submitOrder(){
     await loadSession();
     await loadItems();
     renderItems();
-    mountFooter();
+    setupEventHandlers();
     updateTotalsBoth();
-
-    if (typeof saveBtn !== "undefined" && saveBtn){
-      saveBtn.onclick = async () => {
-        try { await saveChanges(); showAlert("Alterações salvas."); updateTotalsBoth(); }
-        catch(e){ showAlert(e.message); }
-      };
-    }
-    if (typeof submitBtn !== "undefined" && submitBtn){
-      submitBtn.onclick = handleSubmit;
-    }
+    
+    // Configura visibilidade inicial das barras
+    updateActionBarsVisibility();
 
   } catch(e){
     showAlert(e.message || String(e));
