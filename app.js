@@ -88,8 +88,7 @@ async function handleSubmit(){
     setSubmitting(true);
     await saveChanges();
     await submitOrder();
-    alert("Pedido enviado!");
-    location.replace("about:blank");
+    showSuccessPage();
   } catch(e){
     showAlert(e.message || String(e));
   } finally {
@@ -97,6 +96,68 @@ async function handleSubmit(){
   }
 }
 
+function showSuccessPage(){
+  document.body.innerHTML = `
+    <div style="
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--success) 0%, #047857 100%);
+      color: white;
+      text-align: center;
+      padding: 20px;
+    ">
+      <div style="
+        max-width: 500px;
+        background: white;
+        color: var(--gray-900);
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      ">
+        <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
+        <h1 style="
+          font-size: 28px;
+          font-weight: 700;
+          margin: 0 0 16px;
+          color: var(--success);
+        ">Pedido Enviado com Sucesso!</h1>
+        <p style="
+          font-size: 16px;
+          line-height: 1.6;
+          margin: 0 0 24px;
+          color: var(--gray-600);
+        ">
+          Obrigado por enviar seu pedido! Em breve entraremos em contato 
+          para confirmar os itens e definir a forma de pagamento.
+        </p>
+        <div style="
+          background: var(--success-light);
+          padding: 16px;
+          border-radius: 8px;
+          border-left: 4px solid var(--success);
+          margin-bottom: 24px;
+        ">
+          <p style="
+            margin: 0;
+            font-size: 14px;
+            color: var(--success);
+            font-weight: 600;
+          ">
+            📞 Nossa equipe entrará em contato em até 24 horas
+          </p>
+        </div>
+        <small style="
+          color: var(--gray-500);
+          font-size: 13px;
+        ">
+          Você pode fechar esta página com segurança.
+        </small>
+      </div>
+    </div>
+  `;
+}
 // Função para controlar visibilidade das barras de ação
 function updateActionBarsVisibility() {
   const mainActions = document.querySelector('.actions');
