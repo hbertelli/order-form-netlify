@@ -262,15 +262,15 @@ async function loadSession(){
     );
     throw error;
   }
-    .single();
   
-  if (error) {
+  if (!data) {
     showErrorPage(
-      "Erro de Acesso",
-      "Não foi possível acessar sua sessão. Verifique se o link está correto ou solicite um novo link de acesso.",
+      "Sessão Não Encontrada",
+      "Não foi possível encontrar sua sessão. Verifique se o link está correto ou solicite um novo link de acesso.",
       "🚫"
     );
-    throw error;
+    throw new Error("Sessão não encontrada");
+  }
   
   if (data.used) {
     showErrorPage(
