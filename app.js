@@ -81,13 +81,7 @@ if (!token) {
 }
 
 const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
-  db: { schema: "demo" },
-  global: {
-    headers: {
-      'apikey': cfg.SUPABASE_ANON,
-      'Authorization': `Bearer ${token}`
-    }
-  }
+  db: { schema: "demo" }
 });
 
 let session = null;
@@ -251,31 +245,7 @@ async function loadSession(){
   console.log('🔍 Schema configurado: demo');
   console.log('🔍 Token é UUID válido:', /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token));
   
-  // Primeiro, vamos testar se conseguimos acessar a tabela
-  console.log('🔍 Testando acesso à tabela order_sessions...');
-  const { data: testData, error: testError } = await supabase
-    .from("order_sessions")
-    .select("id")
-    .limit(1);
-  
-  console.log('📊 Teste de acesso à tabela:', { 
-    testData, 
-    testError,
-    canAccessTable: !testError
-  });
-  
-  if (testError) {
-    console.error('❌ Erro ao acessar tabela order_sessions:', testError);
-    showErrorPage(
-      "Erro de Configuração",
-      `Não foi possível acessar a tabela de sessões. Erro: ${testError.message}`,
-      "🚫"
-    );
-    throw testError;
-  }
-  
-  // Agora tenta buscar a sessão específica
-  console.log('🔍 Buscando sessão específica...');
+  // Busca a sessão específica usando o token como ID
   const { data, error } = await supabase
     .from("order_sessions")
     .select("id, expires_at, used, created_at, customer_id")
@@ -289,15 +259,14 @@ async function loadSession(){
     hasData: !!data,
     errorCode: error?.code,
     errorMessage: error?.message,
-    queryUsed: `SELECT id, expires_at, used, created_at FROM order_sessions WHERE id = '${token}'`
+    queryUsed: `SELECT id, expires_at, used, created_at, customer_id FROM order_sessions WHERE id = '${token}'`
   });
   
   if (error) {
     console.error('Erro na consulta:', error);
-    console.error('Detalhes completos do erro:', JSON.stringify(error, null, 2));
     showErrorPage(
       "Erro de Acesso",
-      `Erro na consulta: ${error.message}. Código: ${error.code}. Verifique se a tabela 'order_sessions' existe no schema 'demo'.`,
+      `Erro na consulta: ${error.message}. Código: ${error.code || 'N/A'}`,
       "🚫"
     );
     throw error;
@@ -305,41 +274,9 @@ async function loadSession(){
   
   if (!data) {
     console.warn('⚠️ Nenhuma sessão encontrada para o token:', token);
-    
-    // Vamos tentar buscar TODAS as sessões para debug
-    console.log('🔍 Buscando todas as sessões para debug...');
-    const { data: allSessions, error: allError } = await supabase
-      .from("order_sessions")
-      .select("id, expires_at, used, created_at, customer_id")
-      .limit(10);
-    
-    console.log('📊 Todas as sessões encontradas:', { 
-      allSessions, 
-      allError,
-      totalFound: allSessions?.length || 0
-    });
-    
-    // Tentar buscar sem RLS para debug
-    console.log('🔍 Tentando buscar sessão sem RLS (usando service key)...');
-    const debugSupabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
-      db: { schema: "demo" }
-    });
-    
-    const { data: debugData, error: debugError } = await debugSupabase
-      .from("order_sessions")
-      .select("id, expires_at, used, created_at, customer_id")
-      .eq("id", token)
-      .maybeSingle();
-    
-    console.log('📊 Debug sem RLS:', { 
-      debugData, 
-      debugError,
-      foundWithoutRLS: !!debugData
-    });
-    
     showErrorPage(
       "Sessão Não Encontrada",
-      `Não foi possível encontrar sua sessão com o token: ${token.substring(0, 8)}... Verifique se o link está correto ou solicite um novo link de acesso.`,
+      `Não foi possível encontrar sua sessão. Verifique se o link está correto ou solicite um novo link de acesso.`,
       "🚫"
     );
     throw new Error("Sessão não encontrada");
