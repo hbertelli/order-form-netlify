@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
       // Busca por CNPJ usando função para limpar formatação no PostgreSQL
       const { data, error } = await supabase
         .from('clientes_atacamax')
-        .select('codpessoa, nome, cpfcgc')
+        .select('cod_cliente, nome, cpfcgc')
         .filter('cpfcgc', 'eq', cleanInputCnpj)
         .single()
       
@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
       if (error && error.code === 'PGRST116') {
         const { data: dataRegex, error: errorRegex } = await supabase
           .from('clientes_atacamax')
-          .select('codpessoa, nome, cpfcgc')
+          .select('cod_cliente, nome, cpfcgc')
           .filter('regexp_replace(cpfcgc, \'[^0-9]\', \'\', \'g\')', 'eq', cleanInputCnpj)
           .single()
         
@@ -119,7 +119,7 @@ Deno.serve(async (req: Request) => {
     const { data: lastOrderProducts, error: lastOrderError } = await supabase
       .from('v_last_order_by_product_atacamax')
       .select('codprodfilho, qtde')
-      .eq('codpessoa', customer.codpessoa)
+      .eq('cod_cliente', customer.cod_cliente)
 
     if (lastOrderError) {
       return new Response(
@@ -128,7 +128,7 @@ Deno.serve(async (req: Request) => {
           error: 'LAST_ORDER_QUERY_ERROR',
           message: 'Erro ao consultar último pedido',
           details: lastOrderError.message,
-          customer_id: customer.codpessoa,
+          customer_id: customer.cod_cliente,
           debug_query: 'v_last_order_by_product_atacamax'
         }),
         {
@@ -145,7 +145,7 @@ Deno.serve(async (req: Request) => {
           error: 'NO_LAST_ORDER_FOUND',
           message: 'Nenhum pedido anterior encontrado',
           details: 'Não foram encontrados produtos no último pedido deste cliente',
-          customer_id: customer.codpessoa,
+          customer_id: customer.cod_cliente,
           customer_name: customer.nome
         }),
         {
@@ -170,7 +170,7 @@ Deno.serve(async (req: Request) => {
           error: 'PRODUCTS_QUERY_ERROR',
           message: 'Erro ao consultar produtos atuais',
           details: productsError.message,
-          customer_id: customer.codpessoa,
+          customer_id: customer.cod_cliente,
           product_ids: productIds
         }),
         {
@@ -187,7 +187,7 @@ Deno.serve(async (req: Request) => {
           error: 'NO_ACTIVE_PRODUCTS_FOUND',
           message: 'Nenhum produto ativo encontrado',
           details: 'Os produtos do último pedido não estão mais ativos no sistema',
-          customer_id: customer.codpessoa,
+          customer_id: customer.cod_cliente,
           customer_name: customer.nome,
           requested_products: productIds.length
         }),
@@ -208,11 +208,11 @@ Deno.serve(async (req: Request) => {
     const { data: session, error: sessionError } = await supabase
       .from('order_sessions')
       .insert({
-        customer_id: customer.codpessoa,
+        customer_id: customer.cod_cliente,
         expires_at: expiresAt.toISOString(),
         used: false
-      })
-      .select()
+      .select('cod_cliente, nome, cpfcgc')
+      .eq('cod_cliente', customer_id)
       .single()
 
     if (sessionError) {
@@ -222,7 +222,7 @@ Deno.serve(async (req: Request) => {
           error: 'SESSION_CREATION_FAILED',
           message: 'Erro ao criar sessão',
           details: sessionError.message,
-          customer_id: customer.codpessoa
+          customer_id: customer.cod_cliente
         }),
         {
           status: 200,
@@ -280,7 +280,7 @@ Deno.serve(async (req: Request) => {
         data: {
           session_id: session.id,
           customer: {
-            id: customer.codpessoa,
+            id: customer.cod_cliente,
             name: customer.nome,
             cnpj: customer.cpfcgc
           },
