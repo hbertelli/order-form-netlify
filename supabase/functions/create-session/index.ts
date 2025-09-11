@@ -60,6 +60,47 @@ Deno.serve(async (req: Request) => {
     }
 
     // Cliente existe, prosseguir com a criação da sessão
+    // Verificar se existem produtos disponíveis para este cliente
+    const { data: products, error: productsError } = await supabase
+      .from('produtos_atacamax')
+      .select('codprodfilho')
+      .eq('ativo', true)
+      .limit(1)
+
+    if (productsError) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'PRODUCTS_QUERY_ERROR',
+          message: 'Erro ao consultar produtos',
+          details: productsError.message,
+          customer_id: customer_id
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    if (!products || products.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'NO_PRODUCTS_AVAILABLE',
+          message: 'Nenhum produto disponível',
+          details: 'Não foram encontrados produtos ativos no sistema para criar um pedido',
+          customer_id: customer_id,
+          customer_name: customer.name
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    // Produtos disponíveis, prosseguir com a criação da sessão
     const expiresAt = new Date()
     expiresAt.setHours(expiresAt.getHours() + 24) // Expira em 24 horas
 
