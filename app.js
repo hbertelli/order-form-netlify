@@ -305,31 +305,44 @@ async function loadSession(){
 }
 
 async function loadItems(){
-  // 1) itens (sem join)
+  // 1) buscar itens da sessão atual
   const { data: rawItems, error } = await supabase
     .from("order_items")
     .select("id, session_id, product_id, qty")
+    .eq("session_id", session.id)
     .order("id");
   if (error) throw error;
+
+  console.log('🔍 Debug - Items encontrados:', rawItems?.length || 0);
+  console.log('🔍 Debug - Session ID:', session.id);
+  console.log('🔍 Debug - Raw items:', rawItems);
 
   const arr = rawItems || [];
   if (!arr.length){ items = []; return; }
 
-  // 2) busca produtos em lotes (ids normalizados como string)
+  // 2) buscar produtos correspondentes
   const idStrs = Array.from(new Set(arr.map(it => String(it.product_id)).filter(Boolean)));
+  console.log('🔍 Debug - Product IDs para buscar:', idStrs);
+  
   const batches = chunk(idStrs, 200); // lote de 200 para evitar URLs longas
   let prods = [];
 
   for (const part of batches){
-    // para coluna numeric/bigint, mandamos números mesmo
+    // converter para números para a consulta
     const asNumbers = part.map(s => Number(s)).filter(n => Number.isFinite(n));
+    console.log('🔍 Debug - Buscando produtos com IDs:', asNumbers);
+    
     const { data, error: prodErr } = await supabase
       .from("produtos_atacamax")
       .select("codprodfilho, descricao, referencia, gtin, preco3, promo3, ativo")
       .in("codprodfilho", asNumbers);
     if (prodErr) throw prodErr;
+    
+    console.log('🔍 Debug - Produtos encontrados neste lote:', data?.length || 0);
     prods = prods.concat(data || []);
   }
+
+  console.log('🔍 Debug - Total de produtos encontrados:', prods.length);
 
   // 3) index por string(codprodfilho)
   const byId = new Map(prods.map(p => [String(p.codprodfilho), p]));
@@ -337,11 +350,23 @@ async function loadItems(){
   items = arr.map(it => {
     const p = byId.get(String(it.product_id)) || null;
     const unit_price = computeUnitPrice(p);
+    console.log('🔍 Debug - Item mapeado:', { 
+      id: it.id, 
+      product_id: it.product_id, 
+      qty: it.qty, 
+      produto_encontrado: !!p,
+      unit_price 
+    });
     return { ...it, produto: p, unit_price };
   });
 
   const misses = items.filter(x => !x.produto).length;
-  if (misses) console.warn(`Produtos não encontrados para ${misses}/${items.length} itens.`);
+  if (misses) {
+    console.warn(`⚠️ Produtos não encontrados para ${misses}/${items.length} itens.`);
+    console.warn('🔍 Itens sem produto:', items.filter(x => !x.produto));
+  }
+  
+  console.log('🔍 Debug - Items finais:', items.length);
 }
 
 /* ---------- render ---------- */
