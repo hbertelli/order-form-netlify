@@ -306,11 +306,34 @@ async function loadSession(){
 
 async function loadItems(){
   // 1) buscar itens da sessão atual
+  console.log('🔍 Debug - Iniciando loadItems para session:', session.id);
+  console.log('🔍 Debug - Schema configurado:', supabase.supabaseUrl, supabase.supabaseKey?.substring(0, 20) + '...');
+  
+  // Primeiro, vamos verificar se a tabela existe e tem dados
+  const { data: allItems, error: allError } = await supabase
+    .from("order_items")
+    .select("*")
+    .limit(5);
+  
+  console.log('🔍 Debug - Teste geral da tabela order_items:', { 
+    allItems: allItems?.length || 0, 
+    allError,
+    sample: allItems?.[0] 
+  });
+  
   const { data: rawItems, error } = await supabase
     .from("order_items")
     .select("id, session_id, product_id, qty")
     .eq("session_id", session.id)
     .order("id");
+     
+  console.log('🔍 Debug - Query específica da sessão:', {
+    sessionId: session.id,
+    query: `SELECT id, session_id, product_id, qty FROM order_items WHERE session_id = '${session.id}' ORDER BY id`,
+    rawItems: rawItems?.length || 0,
+    error: error
+  });
+  
   if (error) throw error;
 
   console.log('🔍 Debug - Items encontrados:', rawItems?.length || 0);
