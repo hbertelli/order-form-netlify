@@ -1,0 +1,13 @@
+{
+  "name": "order-form-netlify",
+  "version": "1.0.0",
+  "description": "Static order form that consumes Supabase",
+  "main": "app.js",
+  "scripts": {
+    "dev": "echo 'This is a static site. Open index.html in a browser or serve with a static server.'",
+    "build": "echo 'No build step required for this static site.'"
+  },
+  "keywords": ["static", "supabase", "order-form"],
+  "author": "",
+  "license": "ISC"
+}
