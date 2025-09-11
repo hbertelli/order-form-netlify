@@ -18,16 +18,16 @@ Deno.serve(async (req: Request) => {
       db: { schema: 'demo' }
     })
 
-    const { customer_id } = await req.json()
+    const { customer_id, cnpj } = await req.json()
 
-    // Validar se customer_id foi fornecido
-    if (!customer_id) {
+    // Validar se pelo menos um parâmetro foi fornecido
+    if (!customer_id && !cnpj) {
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: 'MISSING_CUSTOMER_ID',
-          message: 'customer_id é obrigatório',
-          details: 'O parâmetro customer_id deve ser fornecido na requisição'
+          error: 'MISSING_IDENTIFIER',
+          message: 'customer_id ou cnpj é obrigatório',
+          details: 'Pelo menos um dos parâmetros (customer_id ou cnpj) deve ser fornecido na requisição'
         }),
         {
           status: 200,
@@ -36,12 +36,52 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Verificar se o cliente existe
-    const { data: customer, error: customerError } = await supabase
-      .from('customers')
-      .select('id, name, email')
-      .eq('id', customer_id)
-      .single()
+    let customer = null
+    let customerError = null
+    let searchCriteria = ''
+
+    if (customer_id) {
+      // Busca por código do cliente
+      const { data, error } = await supabase
+        .from('clientes_atacamax')
+        .select('codpessoa, nome, cpfcgc')
+        .eq('codpessoa', customer_id)
+        .single()
+      
+      customer = data
+      customerError = error
+      searchCriteria = `código ${customer_id}`
+    } else if (cnpj) {
+      // Limpar formatação do CNPJ de entrada
+      const cleanInputCnpj = cnpj.replace(/[^\d]/g, '')
+      
+      if (cleanInputCnpj.length !== 14) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'INVALID_CNPJ_FORMAT',
+            message: 'CNPJ inválido',
+            details: 'O CNPJ deve conter exatamente 14 dígitos',
+            cnpj: cnpj
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        )
+      }
+
+      // Busca por CNPJ usando função para limpar formatação
+      const { data, error } = await supabase
+        .from('clientes_atacamax')
+        .select('codpessoa, nome, cpfcgc')
+        .eq('regexp_replace(cpfcgc, \'[^0-9]\', \'\', \'g\')', cleanInputCnpj)
+        .single()
+      
+      customer = data
+      customerError = error
+      searchCriteria = `CNPJ ${cnpj}`
+    }
 
     if (customerError || !customer) {
       return new Response(
@@ -49,8 +89,10 @@ Deno.serve(async (req: Request) => {
           success: false,
           error: 'CUSTOMER_NOT_FOUND',
           message: 'Cliente não encontrado',
-          details: `O cliente com ID ${customer_id} não existe no sistema`,
-          customer_id: customer_id
+          details: `O cliente com ${searchCriteria} não existe no sistema`,
+          search_criteria: searchCriteria,
+          customer_id: customer_id || null,
+          cnpj: cnpj || null
         }),
         {
           status: 200,
@@ -74,7 +116,7 @@ Deno.serve(async (req: Request) => {
           error: 'PRODUCTS_QUERY_ERROR',
           message: 'Erro ao consultar produtos',
           details: productsError.message,
-          customer_id: customer_id
+          customer_id: customer.codpessoa
         }),
         {
           status: 200,
@@ -90,8 +132,8 @@ Deno.serve(async (req: Request) => {
           error: 'NO_PRODUCTS_AVAILABLE',
           message: 'Nenhum produto disponível',
           details: 'Não foram encontrados produtos ativos no sistema para criar um pedido',
-          customer_id: customer_id,
-          customer_name: customer.name
+          customer_id: customer.codpessoa,
+          customer_name: customer.nome
         }),
         {
           status: 200,
@@ -107,7 +149,7 @@ Deno.serve(async (req: Request) => {
     const { data: session, error: sessionError } = await supabase
       .from('order_sessions')
       .insert({
-        customer_id,
+        customer_id: customer.codpessoa,
         expires_at: expiresAt.toISOString(),
         used: false
       })
@@ -121,7 +163,7 @@ Deno.serve(async (req: Request) => {
           error: 'SESSION_CREATION_FAILED',
           message: 'Erro ao criar sessão',
           details: sessionError.message,
-          customer_id: customer_id
+          customer_id: customer.codpessoa
         }),
         {
           status: 200,
@@ -152,15 +194,15 @@ Deno.serve(async (req: Request) => {
         data: {
           session_id: session.id,
           customer: {
-            id: customer.id,
-            name: customer.name,
-            email: customer.email
+            id: customer.codpessoa,
+            name: customer.nome,
+            cnpj: customer.cpfcgc
           },
           expires_at: session.expires_at,
           order_url: orderUrl,
           token: token
         },
-        message: `Sessão criada com sucesso para ${customer.name}`
+        message: `Sessão criada com sucesso para ${customer.nome}`
       }),
       {
         status: 200,
