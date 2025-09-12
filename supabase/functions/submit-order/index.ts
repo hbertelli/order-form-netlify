@@ -2,6 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const resendApiKey = Deno.env.get('RESEND_API_KEY')!
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -274,6 +275,15 @@ Deno.serve(async (req: Request) => {
 
     console.log('✅ Pedido salvo na tabela orders_submitted:', savedOrder.id)
 
+    // Enviar email de notificação
+    try {
+      await sendOrderNotificationEmail(orderPayload, savedOrder.id)
+      console.log('✅ Email de notificação enviado com sucesso')
+    } catch (emailError) {
+      console.error('❌ Erro ao enviar email:', emailError)
+      // Não falha o processo se o email falhar
+    }
+
     // Marcar sessão como usada
     const { error: updateError } = await supabase
       .from('order_sessions')
@@ -341,3 +351,102 @@ Deno.serve(async (req: Request) => {
     )
   }
 })
+async function sendOrderNotificationEmail(orderPayload: any, orderId: string) {
+  const emailHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+        .customer-info { background: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .items-table { width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; }
+        .items-table th, .items-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        .items-table th { background: #f3f4f6; font-weight: 600; }
+        .total { background: #059669; color: white; padding: 15px; text-align: center; border-radius: 6px; margin-top: 20px; }
+        .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #6b7280; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🛒 Novo Pedido Recebido</h1>
+          <p>Pedido #${orderId}</p>
+        </div>
+        
+        <div class="content">
+          <div class="customer-info">
+            <h3>👤 Dados do Cliente</h3>
+            <p><strong>Nome:</strong> ${orderPayload.customer.name}</p>
+            <p><strong>Código:</strong> ${orderPayload.customer.id}</p>
+            <p><strong>CNPJ:</strong> ${orderPayload.customer.cnpj}</p>
+          </div>
+          
+          <h3>📦 Itens do Pedido</h3>
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Referência</th>
+                <th>Qtd</th>
+                <th>Preço Unit.</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${orderPayload.items.map(item => `
+                <tr>
+                  <td>${item.descricao}</td>
+                  <td>${item.referencia || '-'}</td>
+                  <td>${item.qty}</td>
+                  <td>R$ ${item.preco_unitario.toFixed(2).replace('.', ',')}</td>
+                  <td>R$ ${item.subtotal.toFixed(2).replace('.', ',')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <div class="total">
+            <h3>💰 Total do Pedido: R$ ${orderPayload.totals.total_value.toFixed(2).replace('.', ',')}</h3>
+            <p>${orderPayload.totals.total_items} itens</p>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>Pedido enviado em ${new Date(orderPayload.session_info.submitted_at).toLocaleString('pt-BR')}</p>
+          <p>Sistema de Pedidos - Wise Sales</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+
+  const emailPayload = {
+    from: 'Sistema de Pedidos <noreply@wisesales.com.br>',
+    to: ['hilton.bertelli@wisesales.com.br'],
+    subject: `🛒 Novo Pedido - ${orderPayload.customer.name} - R$ ${orderPayload.totals.total_value.toFixed(2).replace('.', ',')}`,
+    html: emailHtml
+  }
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${resendApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(emailPayload),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Falha ao enviar email: ${response.status} - ${errorText}`)
+  }
+
+  const result = await response.json()
+  console.log('📧 Email enviado:', result.id)
+  
+  return result
+}
