@@ -430,7 +430,7 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string) {
   `
 
   const emailPayload = {
-    from: 'Sistema de Pedidos <noreply@wisesales.com.br>',
+    from: 'Sistema de Pedidos <onboarding@resend.dev>',
     to: ['hilton.bertelli@wisesales.com.br'],
     subject: `🛒 Novo Pedido - ${orderPayload.customer.name} - R$ ${orderPayload.totals.total_value.toFixed(2).replace('.', ',')}`,
     html: emailHtml

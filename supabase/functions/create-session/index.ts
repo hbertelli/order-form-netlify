@@ -278,7 +278,7 @@ Deno.serve(async (req: Request) => {
 
     // Criar sessão
     const expiresAt = new Date()
-    expiresAt.setHours(expiresAt.getHours() + 24) // Expira em 24 horas
+    expiresAt.setHours(expiresAt.getHours() + 48) // Expira em 48 horas
 
     const { data: session, error: sessionError } = await supabase
       .from('order_sessions')

@@ -256,13 +256,12 @@ main {
 
 .item-subtotal {
   grid-area: subtotal;
-  justify-self: end;
   font-weight: 700;
   font-size: 16px;
   min-width: 100px;
   text-align: right;
   color: var(--gray-900);
-  align-self: center;
+  padding: 0 var(--spacing-sm);
   display: flex;
   align-items: center;
   justify-content: flex-end;
