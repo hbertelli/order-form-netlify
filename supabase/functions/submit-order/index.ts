@@ -227,6 +227,53 @@ Deno.serve(async (req: Request) => {
     console.log('🔍 Debug - Total do pedido:', totalPedido)
     console.log('🔍 Debug - Itens detalhados:', itensDetalhados.length)
 
+    // Preparar payload completo do pedido
+    const orderPayload = {
+      customer: {
+        id: customer.codpessoa,
+        name: customer.nome,
+        cnpj: customer.cpfcgc
+      },
+      items: itensDetalhados,
+      totals: {
+        total_items: orderItems.length,
+        total_value: totalPedido
+      },
+      session_info: {
+        session_id: sessionId,
+        submitted_at: new Date().toISOString()
+      }
+    }
+
+    // Salvar pedido na tabela orders_submitted
+    const { data: savedOrder, error: saveOrderError } = await supabase
+      .from('orders_submitted')
+      .insert({
+        session_id: sessionId,
+        customer_id: session.customer_id,
+        payload: orderPayload
+      })
+      .select('id, submitted_at')
+      .single()
+
+    if (saveOrderError) {
+      console.error('Erro ao salvar pedido:', saveOrderError)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'ORDER_SAVE_ERROR',
+          message: 'Erro ao salvar pedido no banco de dados',
+          details: saveOrderError.message
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    console.log('✅ Pedido salvo na tabela orders_submitted:', savedOrder.id)
+
     // Marcar sessão como usada
     const { error: updateError } = await supabase
       .from('order_sessions')
@@ -246,6 +293,7 @@ Deno.serve(async (req: Request) => {
 
     console.log('✅ Pedido processado com sucesso:', {
       sessionId,
+      orderId: savedOrder.id,
       customerId: session.customer_id,
       customerName: customer.nome,
       totalItems: orderItems.length,
@@ -257,6 +305,7 @@ Deno.serve(async (req: Request) => {
         success: true,
         message: 'Pedido enviado com sucesso',
         data: {
+          order_id: savedOrder.id,
           session_id: sessionId,
           customer: {
             id: customer.codpessoa,
@@ -266,7 +315,7 @@ Deno.serve(async (req: Request) => {
           items: itensDetalhados,
           total_items: orderItems.length,
           total_value: totalPedido,
-          submitted_at: new Date().toISOString()
+          submitted_at: savedOrder.submitted_at
         }
       }),
       {
