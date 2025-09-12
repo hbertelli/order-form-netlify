@@ -402,7 +402,11 @@ function renderItems(){
   }
   emptyHint.style.display = "none";
 
-  items.forEach((it, idx) => {
+  // Ordenar itens por quantidade de forma decrescente
+  const sortedItems = [...items].sort((a, b) => (b.qty || 0) - (a.qty || 0));
+
+  sortedItems.forEach((it) => {
+    const originalIdx = items.findIndex(item => item.id === it.id);
     const row = document.createElement("div");
     row.className = "item-row";
 
@@ -423,11 +427,13 @@ function renderItems(){
     qty.className = "qty-input";
     qty.addEventListener("input", () => {
       const v = parseFloat(qty.value || "0");
-      items[idx].qty = Number.isFinite(v) ? v : 0;
+      items[originalIdx].qty = Number.isFinite(v) ? v : 0;
       // atualiza subtotal em tempo real
       const up = it.unit_price ?? null;
-      subtotal.textContent = (up!=null) ? formatBRL((items[idx].qty||0)*up) : "-";
+      subtotal.textContent = (up!=null) ? formatBRL((items[originalIdx].qty||0)*up) : "-";
       updateTotalsBoth();
+      // Re-renderizar para manter a ordenação
+      setTimeout(() => renderItems(), 100);
     });
 
     const price = document.createElement("div");
@@ -444,7 +450,7 @@ function renderItems(){
     del.className = "btn-remove";
     del.innerHTML = "🗑️ Remover";
     del.addEventListener("click", () => {
-      items.splice(idx, 1);
+      items.splice(originalIdx, 1);
       renderItems();
       updateTotalsBoth();            
     });
