@@ -409,14 +409,9 @@ function renderItems(){
     const title = document.createElement("div");
     title.className = "item-title-wrap";
     const nome  = it.produto?.descricao ?? `#${it.product_id}`;
-    const ref   = it.produto?.referencia ?? "";
-    const gtin  = it.produto?.gtin ?? "";
     const codigo = it.produto?.codprodfilho ?? it.product_id;
     
-    // Monta as informações do produto
-    let metaInfo = `Código: ${codigo}`;
-    if (ref) metaInfo += ` | Ref: ${ref}`;
-    if (gtin) metaInfo += ` | EAN: ${gtin}`;
+    const metaInfo = `Código: ${codigo}`;
     
     title.innerHTML = `
       <div class="item-title">${nome}</div>

@@ -182,7 +182,7 @@ Deno.serve(async (req: Request) => {
     const productIds = orderItems.map(item => item.product_id)
     const { data: products, error: productsError } = await supabase
       .from('produtos_atacamax')
-      .select('codprodfilho, descricao, referencia, gtin, preco3, promo3')
+      .select('codprodfilho, descricao, preco3, promo3')
       .in('codprodfilho', productIds)
 
     if (productsError) {
@@ -217,8 +217,6 @@ Deno.serve(async (req: Request) => {
       return {
         product_id: item.product_id,
         descricao: produto?.descricao || 'Produto não encontrado',
-        referencia: produto?.referencia || '',
-        gtin: produto?.gtin || '',
         codigo: produto?.codprodfilho || item.product_id,
         qty: parseFloat(item.qty || '0'),
         preco_unitario: precoFinal,
@@ -392,8 +390,6 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string) {
               <tr>
                 <th>Código</th>
                 <th>Produto</th>
-                <th>Referência</th>
-                <th>EAN</th>
                 <th>Qtd</th>
                 <th>Preço Unit.</th>
                 <th>Subtotal</th>
@@ -404,8 +400,6 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string) {
                 <tr>
                   <td>${item.codigo}</td>
                   <td>${item.descricao}</td>
-                  <td>${item.referencia || '-'}</td>
-                  <td>${item.gtin || '-'}</td>
                   <td>${item.qty}</td>
                   <td>R$ ${item.preco_unitario.toFixed(2).replace('.', ',')}</td>
                   <td>R$ ${item.subtotal.toFixed(2).replace('.', ',')}</td>

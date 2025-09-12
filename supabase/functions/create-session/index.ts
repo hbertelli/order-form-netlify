@@ -234,7 +234,7 @@ Deno.serve(async (req: Request) => {
     const productIds = lastOrderProducts.map(p => p.codprodfilho)
     const { data: currentProducts, error: productsError } = await supabase
       .from('produtos_atacamax')
-      .select('codprodfilho, descricao, referencia, gtin, preco3, promo3, ativo')
+      .select('codprodfilho, descricao, preco3, promo3, ativo')
       .in('codprodfilho', productIds)
       .eq('ativo', 'S')
 
