@@ -210,7 +210,7 @@ Deno.serve(async (req: Request) => {
       const precoBase = parseFloat(produto?.preco3 || '0')
       const precoPromo = parseFloat(produto?.promo3 || '0')
       const precoFinal = (precoPromo > 0 && precoPromo < precoBase) ? precoPromo : precoBase
-      const subtotal = precoFinal * item.qty
+      const subtotal = precoFinal * parseFloat(item.qty || '0')
       
       totalPedido += subtotal
 
@@ -219,7 +219,8 @@ Deno.serve(async (req: Request) => {
         descricao: produto?.descricao || 'Produto não encontrado',
         referencia: produto?.referencia || '',
         gtin: produto?.gtin || '',
-        qty: item.qty,
+        codigo: produto?.codprodfilho || item.product_id,
+        qty: parseFloat(item.qty || '0'),
         preco_unitario: precoFinal,
         subtotal: subtotal
       }
@@ -389,8 +390,10 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string) {
           <table class="items-table">
             <thead>
               <tr>
+                <th>Código</th>
                 <th>Produto</th>
                 <th>Referência</th>
+                <th>EAN</th>
                 <th>Qtd</th>
                 <th>Preço Unit.</th>
                 <th>Subtotal</th>
@@ -399,8 +402,10 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string) {
             <tbody>
               ${orderPayload.items.map(item => `
                 <tr>
+                  <td>${item.codigo}</td>
                   <td>${item.descricao}</td>
                   <td>${item.referencia || '-'}</td>
+                  <td>${item.gtin || '-'}</td>
                   <td>${item.qty}</td>
                   <td>R$ ${item.preco_unitario.toFixed(2).replace('.', ',')}</td>
                   <td>R$ ${item.subtotal.toFixed(2).replace('.', ',')}</td>

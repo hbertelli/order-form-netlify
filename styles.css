@@ -263,6 +263,9 @@ main {
   text-align: right;
   color: var(--gray-900);
   align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .btn-remove {
