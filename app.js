@@ -134,6 +134,9 @@ function updateCustomerHeader() {
     return;
   }
   
+  console.log('🔍 Debug - Elemento customer-info encontrado:', customerInfoDiv);
+  console.log('🔍 Debug - customerInfoDiv.style.display antes:', customerInfoDiv.style.display);
+  
   // Formatar endereço completo
   const endereco = [
     customerData.logradouro,
@@ -145,6 +148,9 @@ function updateCustomerHeader() {
   ].filter(Boolean).join(', ');
   
   console.log('🔍 Debug - Endereço formatado:', endereco);
+  
+  // Garantir que o elemento está visível
+  customerInfoDiv.style.display = 'block';
   
   customerInfoDiv.innerHTML = `
     <div class="customer-header">
@@ -161,6 +167,7 @@ function updateCustomerHeader() {
   `;
   
   console.log('✅ Debug - HTML do cliente inserido no DOM');
+  console.log('🔍 Debug - customerInfoDiv.innerHTML após inserção:', customerInfoDiv.innerHTML.substring(0, 100) + '...');
 }
 // --- envio (usa mesmo handler nos dois botões, se existirem) ---
 let isSubmitting = false;
