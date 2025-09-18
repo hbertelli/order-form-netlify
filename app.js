@@ -140,7 +140,27 @@ function updateCustomerHeader() {
   // Função para capitalizar adequadamente
   function toTitleCase(str) {
     if (!str) return '';
-    return str.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    
+    // Lista de palavras que devem ficar em minúsculo (exceto no início)
+    const minorWords = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'nas', 'nos', 'a', 'o', 'as', 'os'];
+    
+    return str.toLowerCase()
+      .split(' ')
+      .map((word, index) => {
+        // Primeira palavra sempre maiúscula
+        if (index === 0) {
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        }
+        
+        // Palavras menores ficam em minúsculo, exceto se tiverem números
+        if (minorWords.includes(word) && !/\d/.test(word)) {
+          return word;
+        }
+        
+        // Outras palavras com primeira letra maiúscula
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(' ');
   }
   
   // Formatar endereço completo
@@ -160,15 +180,11 @@ function updateCustomerHeader() {
   
   customerInfoDiv.innerHTML = `
     <div class="customer-header">
-      <div class="customer-main">
-        <div class="customer-code">Código: ${customerData.codpessoa}</div>
-        <div class="customer-name">${toTitleCase(customerData.nomefantazia || customerData.nome)}</div>
-        <div class="customer-razao">${toTitleCase(customerData.nome)}</div>
-      </div>
-      <div class="customer-details">
-        <div class="customer-cnpj">CNPJ: ${customerData.cpfcgc}</div>
-        <div class="customer-address">${endereco}</div>
-      </div>
+      <div class="customer-code">Código: ${customerData.codpessoa}</div>
+      <div class="customer-name">${toTitleCase(customerData.nomefantazia || customerData.nome)}</div>
+      <div class="customer-razao">${toTitleCase(customerData.nome)}</div>
+      <div class="customer-cnpj">CNPJ: ${customerData.cpfcgc}</div>
+      <div class="customer-address">${endereco}</div>
     </div>
   `;
   
