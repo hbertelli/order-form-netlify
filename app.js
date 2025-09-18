@@ -509,3 +509,211 @@ async function loadItems(){
     console.warn('🔍 Itens sem produto:', items.filter(x => !x.produto));
   }
 }
+
+/* ---------- render ---------- */
+function renderItems(){
+  if (!items.length) {
+    itemsList.innerHTML = "";
+    emptyHint.style.display = "block";
+    updateTotalsBoth();
+    return;
+  }
+  
+  emptyHint.style.display = "none";
+  
+  const html = items.map(it => {
+    const p = it.produto;
+    if (!p) return `<div class="item-row"><p>Produto ${it.product_id} não encontrado</p></div>`;
+    
+    const unitPrice = it.unit_price || 0;
+    const subtotal = unitPrice * (it.qty || 0);
+    
+    return `
+      <div class="item-row" data-item-id="${it.id}">
+        <div class="item-title-wrap">
+          <div class="item-title">${p.descricao || 'Sem descrição'}</div>
+          <div class="item-meta">Código: ${p.codprodfilho}</div>
+        </div>
+        <div class="item-price">${formatBRL(unitPrice)}</div>
+        <input type="number" class="qty-input" value="${it.qty || 1}" min="1" max="9999" data-item-id="${it.id}">
+        <div class="item-subtotal">${formatBRL(subtotal)}</div>
+        <button class="btn-remove" data-item-id="${it.id}">🗑️ Remover</button>
+      </div>
+    `;
+  }).join("");
+  
+  itemsList.innerHTML = html;
+  updateTotalsBoth();
+  
+  // Adicionar event listeners
+  document.querySelectorAll('.qty-input').forEach(input => {
+    input.addEventListener('change', handleQtyChange);
+    input.addEventListener('input', handleQtyChange);
+  });
+  
+  document.querySelectorAll('.btn-remove').forEach(btn => {
+    btn.addEventListener('click', handleRemoveItem);
+  });
+}
+
+function renderItemsReadonly(){
+  if (!items.length) {
+    itemsList.innerHTML = "<div class='empty'><p>Nenhum item encontrado</p></div>";
+    updateTotalsBoth();
+    return;
+  }
+  
+  const html = items.map(it => {
+    const p = it.produto;
+    if (!p) return `<div class="item-row readonly"><p>Produto ${it.product_id} não encontrado</p></div>`;
+    
+    const unitPrice = it.unit_price || 0;
+    const subtotal = unitPrice * (it.qty || 0);
+    
+    return `
+      <div class="item-row readonly">
+        <div class="item-title-wrap">
+          <div class="item-title">${p.descricao || 'Sem descrição'}</div>
+          <div class="item-meta">Código: ${p.codprodfilho}</div>
+        </div>
+        <div class="qty-display">${it.qty || 1}</div>
+        <div class="item-price">${formatBRL(unitPrice)}</div>
+        <div class="item-subtotal">${formatBRL(subtotal)}</div>
+      </div>
+    `;
+  }).join("");
+  
+  itemsList.innerHTML = html;
+  updateTotalsBoth();
+}
+
+/* ---------- event handlers ---------- */
+function handleQtyChange(e) {
+  const itemId = e.target.dataset.itemId;
+  const newQty = Math.max(1, parseInt(e.target.value) || 1);
+  
+  const item = items.find(it => String(it.id) === String(itemId));
+  if (item) {
+    item.qty = newQty;
+    e.target.value = newQty; // Garantir que o input mostre o valor correto
+    
+    // Atualizar subtotal do item
+    const row = e.target.closest('.item-row');
+    const subtotalEl = row.querySelector('.item-subtotal');
+    const subtotal = (item.unit_price || 0) * newQty;
+    subtotalEl.textContent = formatBRL(subtotal);
+    
+    updateTotalsBoth();
+  }
+}
+
+function handleRemoveItem(e) {
+  const itemId = e.target.dataset.itemId;
+  const index = items.findIndex(it => String(it.id) === String(itemId));
+  
+  if (index >= 0) {
+    items.splice(index, 1);
+    renderItems();
+  }
+}
+
+/* ---------- save/submit ---------- */
+async function saveChanges() {
+  if (!session || !items.length) return;
+  
+  try {
+    // Preparar updates em lotes
+    const updates = items.map(it => ({
+      id: it.id,
+      qty: it.qty || 1
+    }));
+    
+    // Atualizar no Supabase
+    for (const update of updates) {
+      const { error } = await supabase
+        .from('order_items')
+        .update({ qty: update.qty })
+        .eq('id', update.id);
+      
+      if (error) throw error;
+    }
+    
+    console.log('✅ Alterações salvas com sucesso');
+  } catch (error) {
+    console.error('❌ Erro ao salvar:', error);
+    throw new Error('Erro ao salvar alterações: ' + error.message);
+  }
+}
+
+async function submitOrder() {
+  if (!session) throw new Error('Sessão não encontrada');
+  
+  const response = await fetch(`${cfg.FUNCTIONS_BASE}/submit-order`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${cfg.SUPABASE_ANON}`
+    },
+    body: JSON.stringify({
+      session_id: session.id
+    })
+  });
+  
+  const result = await response.json();
+  
+  if (!result.success) {
+    throw new Error(result.message || 'Erro ao enviar pedido');
+  }
+  
+  // Salvar número do pedido para mostrar na tela de sucesso
+  if (result.data?.order_number) {
+    window.lastOrderNumber = result.data.order_number;
+  }
+  
+  console.log('✅ Pedido enviado com sucesso:', result.data);
+}
+
+/* ---------- initialization ---------- */
+async function init() {
+  try {
+    console.log('🚀 Iniciando aplicação...');
+    
+    await loadSession();
+    console.log('✅ Sessão carregada');
+    
+    await loadItems();
+    console.log('✅ Itens carregados:', items.length);
+    
+    renderItems();
+    console.log('✅ Interface renderizada');
+    
+    // Configurar event listeners dos botões principais
+    const mainSaveBtn = document.getElementById('main-save-btn');
+    const mainSubmitBtn = document.getElementById('main-submit-btn');
+    const footerSaveBtn = document.getElementById('footer-save-btn');
+    const footerSubmitBtn = document.getElementById('footer-submit-btn');
+    
+    if (mainSaveBtn) mainSaveBtn.addEventListener('click', saveChanges);
+    if (footerSaveBtn) footerSaveBtn.addEventListener('click', saveChanges);
+    if (mainSubmitBtn) mainSubmitBtn.addEventListener('click', handleSubmit);
+    if (footerSubmitBtn) footerSubmitBtn.addEventListener('click', handleSubmit);
+    
+    // Configurar controle de visibilidade das barras de ação
+    window.addEventListener('scroll', updateActionBarsVisibility);
+    window.addEventListener('resize', updateActionBarsVisibility);
+    updateActionBarsVisibility();
+    
+    console.log('✅ Aplicação inicializada com sucesso');
+    
+  } catch (error) {
+    console.error('❌ Erro na inicialização:', error);
+    // Os erros já são tratados pelas funções individuais
+  }
+}
+
+// Inicializar quando o DOM estiver pronto
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
