@@ -296,6 +296,8 @@ Deno.serve(async (req: Request) => {
         expires_at: expiresAt.toISOString(),
         used: false,
         estimated_order_number: estimatedOrderNumber
+      }
+      )
       .select('codpessoa, nome, cpfcgc, nomefantazia, razaosocial, endereco, numero, bairro, cidade, uf, cep')
       .select('id, customer_id, expires_at, used, created_at')
       .single()
