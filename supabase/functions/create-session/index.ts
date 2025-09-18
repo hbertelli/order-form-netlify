@@ -100,7 +100,7 @@ Deno.serve(async (req: Request) => {
       // Primeira tentativa: busca por CNPJ formatado
       let { data, error } = await supabase
         .from('clientes_atacamax')
-        .select('codpessoa, nome, cpfcgc, nomefantazia, razaosocial, endereco, numero, bairro, cidade, uf, cep')
+        .select('codpessoa, nome, cpfcgc, nomefantazia, logradouro, numero, bairro, cidade, uf, cep')
         .eq('cpfcgc', formattedCnpj)
         .maybeSingle()
       
