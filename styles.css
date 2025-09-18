@@ -264,19 +264,13 @@ main {
   font-weight: 500;
 }
 
-.item-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing);
-  flex-wrap: wrap;
-}
-
 .item-price {
   font-weight: 700;
   font-size: 16px;
   color: var(--success);
   min-width: 80px;
 }
+
 .qty-input {
   width: 80px;
   height: 44px;
@@ -510,17 +504,29 @@ footer {
   }
   
   .item-title-wrap {
-    flex: 1;
+    flex: 2;
     min-width: 0;
   }
   
-  .item-controls {
+  .item-price {
     flex-shrink: 0;
-    flex-wrap: nowrap;
+    margin-right: var(--spacing);
   }
   
   .qty-input {
-    width: 70px;
+    width: 80px;
+    flex-shrink: 0;
+    margin-right: var(--spacing);
+  }
+  
+  .item-subtotal {
+    flex-shrink: 0;
+    margin-right: var(--spacing);
+  }
+  
+  .btn-remove {
+    flex-shrink: 0;
+    margin-left: 0;
   }
 }
 
@@ -533,8 +539,20 @@ footer {
     padding: var(--spacing-xl);
   }
   
-  .item-controls {
-    gap: var(--spacing-lg);
+  .item-title-wrap {
+    flex: 3;
+  }
+  
+  .item-price {
+    margin-right: var(--spacing-lg);
+  }
+  
+  .qty-input {
+    margin-right: var(--spacing-lg);
+  }
+  
+  .item-subtotal {
+    margin-right: var(--spacing-lg);
   }
   
   .actions {
@@ -547,8 +565,20 @@ footer {
 }
 
 @media (min-width: 1024px) {
-  .item-controls {
-    gap: var(--spacing-xl);
+  .item-title-wrap {
+    flex: 4;
+  }
+  
+  .item-price {
+    margin-right: var(--spacing-xl);
+  }
+  
+  .qty-input {
+    margin-right: var(--spacing-xl);
+  }
+  
+  .item-subtotal {
+    margin-right: var(--spacing-xl);
   }
 }
 
