@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
     // Verificar se a sessão existe e não foi usada
     const { data: session, error: sessionError } = await supabase
       .from('order_sessions')
-      .select('id, customer_id, expires_at, used')
+      .select('id, customer_id, expires_at, used, estimated_order_number')
       .eq('id', sessionId)
       .single()
 
@@ -251,7 +251,7 @@ Deno.serve(async (req: Request) => {
       .insert({
         session_id: sessionId,
         customer_id: session.customer_id,
-        order_number: session.estimated_order_number,
+        order_number: session.estimated_order_number, // Use the same number from session
         payload: orderPayload
       })
       .select('id, order_number, submitted_at')
