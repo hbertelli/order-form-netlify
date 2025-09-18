@@ -253,7 +253,7 @@ Deno.serve(async (req: Request) => {
         customer_id: session.customer_id,
         payload: orderPayload
       })
-      .select('id, submitted_at')
+      .select('id, order_number, submitted_at')
       .single()
 
     if (saveOrderError) {
@@ -273,10 +273,11 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log('✅ Pedido salvo na tabela orders_submitted:', savedOrder.id)
+    console.log('📋 Número do pedido:', savedOrder.order_number)
 
     // Enviar email de notificação
     try {
-      await sendOrderNotificationEmail(orderPayload, savedOrder.id)
+      await sendOrderNotificationEmail(orderPayload, savedOrder.id, savedOrder.order_number)
       console.log('✅ Email de notificação enviado com sucesso')
     } catch (emailError) {
       console.error('❌ Erro ao enviar email:', emailError)
@@ -303,6 +304,7 @@ Deno.serve(async (req: Request) => {
     console.log('✅ Pedido processado com sucesso:', {
       sessionId,
       orderId: savedOrder.id,
+      orderNumber: savedOrder.order_number,
       customerId: session.customer_id,
       customerName: customer.nome,
       totalItems: orderItems.length,
@@ -315,6 +317,7 @@ Deno.serve(async (req: Request) => {
         message: 'Pedido enviado com sucesso',
         data: {
           order_id: savedOrder.id,
+          order_number: savedOrder.order_number,
           session_id: sessionId,
           customer: {
             id: customer.codpessoa,
@@ -350,7 +353,7 @@ Deno.serve(async (req: Request) => {
     )
   }
 })
-async function sendOrderNotificationEmail(orderPayload: any, orderId: string) {
+async function sendOrderNotificationEmail(orderPayload: any, orderId: string, orderNumber: number) {
   const emailHtml = `
     <!DOCTYPE html>
     <html>
@@ -373,7 +376,7 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string) {
       <div class="container">
         <div class="header">
           <h1>🛒 Novo Pedido Recebido</h1>
-          <p>Pedido #${orderId}</p>
+          <p>Pedido #${orderNumber}</p>
         </div>
         
         <div class="content">
@@ -426,7 +429,7 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string) {
   const emailPayload = {
     from: 'Sistema de Pedidos <onboarding@resend.dev>',
     to: ['hilton.bertelli@wisesales.com.br'],
-    subject: `🛒 Novo Pedido - ${orderPayload.customer.name} - R$ ${orderPayload.totals.total_value.toFixed(2).replace('.', ',')}`,
+    subject: `🛒 Pedido #${orderNumber} - ${orderPayload.customer.name} - R$ ${orderPayload.totals.total_value.toFixed(2).replace('.', ',')}`,
     html: emailHtml
   }
 

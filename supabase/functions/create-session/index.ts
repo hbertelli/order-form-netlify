@@ -280,12 +280,19 @@ Deno.serve(async (req: Request) => {
     const expiresAt = new Date()
     expiresAt.setHours(expiresAt.getHours() + 48) // Expira em 48 horas
 
+    // Buscar o próximo número de pedido para exibição
+    const { data: nextOrderNumberResult } = await supabase
+      .rpc('get_next_order_number')
+      .single()
+    
+    const estimatedOrderNumber = nextOrderNumberResult?.next_val || null
     const { data: session, error: sessionError } = await supabase
       .from('order_sessions')
       .insert({
         customer_id: customer.codpessoa,
         expires_at: expiresAt.toISOString(),
-        used: false
+        used: false,
+        estimated_order_number: estimatedOrderNumber
       }
       )
       .select('id, customer_id, expires_at, used, created_at')
@@ -349,12 +356,13 @@ Deno.serve(async (req: Request) => {
     // Usar o session_id diretamente como token
     const token = session.id
     const orderUrl = `${req.headers.get('origin') || 'https://stellar-cranachan-2b11bb.netlify.app'}/?token=${token}`
-
+      .single()
     return new Response(
       JSON.stringify({
         success: true,
         data: {
           session_id: session.id,
+          estimated_order_number: estimatedOrderNumber,
           customer: {
              id: customer.codpessoa,
             name: customer.nome,
@@ -366,7 +374,7 @@ Deno.serve(async (req: Request) => {
           items_loaded: orderItems.length,
           total_products_found: currentProducts.length
         },
-        message: `Sessão criada com sucesso para ${customer.nome} com ${orderItems.length} itens do último pedido`
+        message: `Sessão criada com sucesso para ${customer.nome} com ${orderItems.length} itens do último pedido. Número estimado do pedido: ${estimatedOrderNumber || 'N/A'}`
       }),
       {
         status: 200,

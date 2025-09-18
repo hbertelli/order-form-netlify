@@ -7,6 +7,7 @@ const token = url.searchParams.get("token");
 const alertBox    = document.getElementById("alert");
 const itemsList   = document.getElementById("items-list");
 const sessionInfo = document.getElementById("session-info");
+const orderPreview = document.getElementById("order-preview");
 const emptyHint   = document.getElementById("empty-hint");
 
 function showAlert(msg){ alertBox.textContent = msg || ""; alertBox.style.display = msg ? "block":"none"; }
@@ -183,6 +184,22 @@ function showSuccessPage(){
           margin: 0 0 16px;
           color: var(--success);
         ">Pedido Enviado com Sucesso!</h1>
+        ${window.lastOrderNumber ? `
+        <div style="
+          background: var(--success-light);
+          padding: 16px;
+          border-radius: 8px;
+          margin-bottom: 20px;
+          border: 2px solid var(--success);
+        ">
+          <h2 style="
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+            color: var(--success);
+          ">Pedido #${window.lastOrderNumber}</h2>
+        </div>
+        ` : ''}
         <p style="
           font-size: 16px;
           line-height: 1.6;
@@ -248,7 +265,7 @@ async function loadSession(){
   // Busca a sessão específica usando o token como ID
   const { data, error } = await supabase
     .from("order_sessions")
-    .select("id, expires_at, used, created_at, customer_id")
+    .select("id, expires_at, used, created_at, customer_id, estimated_order_number")
     .eq("id", token)
     .maybeSingle();
   
@@ -302,6 +319,11 @@ async function loadSession(){
   
   session = data;
   sessionInfo.textContent = `Expira em ${fmtDate(session.expires_at)}`;
+  
+  // Exibir número estimado do pedido se disponível
+  if (session.estimated_order_number) {
+    orderPreview.textContent = `Número estimado do pedido: #${session.estimated_order_number}`;
+  }
 }
 
 async function loadItems(){
@@ -545,6 +567,11 @@ async function submitOrder(){
   const result = await res.json();
   console.log('✅ Resposta da função:', result);
   
+  // Armazenar número do pedido para exibir na página de sucesso
+  if (result.data && result.data.order_number) {
+    window.lastOrderNumber = result.data.order_number;
+    console.log('📋 Número do pedido armazenado:', window.lastOrderNumber);
+  }
 }
 
 /* ---------- boot ---------- */
