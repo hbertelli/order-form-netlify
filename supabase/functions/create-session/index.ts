@@ -58,7 +58,7 @@ Deno.serve(async (req: Request) => {
       // Busca por código do cliente
       const { data, error } = await supabase
         .from('clientes_atacamax')
-        .select('codpessoa, nome, cpfcgc, nomefantazia, razaosocial, endereco, numero, bairro, cidade, uf, cep')
+        .select('codpessoa, nome, cpfcgc, nomefantazia, logradouro, numero, bairro, cidade, uf, cep')
         .eq('codpessoa', actualCustomerId)
         .single()
       
