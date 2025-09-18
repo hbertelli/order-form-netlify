@@ -280,6 +280,143 @@ function updateTotalsBoth(){
   if (footerTotal) footerTotal.textContent = txt;
 }
 
+/* ---------- event handlers ---------- */
+async function handleQtyChange(event) {
+  const input = event.target;
+  const itemId = parseInt(input.dataset.itemId);
+  const newQty = parseInt(input.value) || 1;
+  
+  // Validar quantidade
+  if (newQty < 1) {
+    input.value = 1;
+    return;
+  }
+  if (newQty > 9999) {
+    input.value = 9999;
+    return;
+  }
+  
+  // Atualizar item local
+  const item = items.find(it => it.id === itemId);
+  if (item) {
+    item.qty = newQty;
+    
+    // Atualizar subtotal na interface
+    const itemRow = input.closest('.item-row');
+    const subtotalEl = itemRow.querySelector('.item-subtotal');
+    const subtotal = (item.unit_price || 0) * newQty;
+    subtotalEl.textContent = formatBRL(subtotal);
+    
+    // Atualizar totais
+    updateTotalsBoth();
+  }
+}
+
+async function handleRemoveItem(event) {
+  const button = event.target;
+  const itemId = parseInt(button.dataset.itemId);
+  
+  if (!confirm('Tem certeza que deseja remover este item?')) {
+    return;
+  }
+  
+  try {
+    // Remover do banco de dados
+    const { error } = await supabase
+      .from('order_items')
+      .delete()
+      .eq('id', itemId);
+    
+    if (error) throw error;
+    
+    // Remover da lista local
+    items = items.filter(it => it.id !== itemId);
+    
+    // Re-renderizar
+    renderItems();
+    
+    showAlert(''); // Limpar alertas
+    
+  } catch (error) {
+    console.error('Erro ao remover item:', error);
+    showAlert('Erro ao remover item: ' + error.message);
+  }
+}
+
+async function saveChanges() {
+  try {
+    showAlert(''); // Limpar alertas
+    
+    // Preparar updates em lote
+    const updates = items.map(item => ({
+      id: item.id,
+      qty: item.qty || 1
+    }));
+    
+    // Atualizar no banco
+    for (const update of updates) {
+      const { error } = await supabase
+        .from('order_items')
+        .update({ qty: update.qty })
+        .eq('id', update.id);
+      
+      if (error) throw error;
+    }
+    
+    // Feedback visual temporário
+    const saveButtons = document.querySelectorAll('#main-save-btn, #footer-save-btn');
+    const originalTexts = Array.from(saveButtons).map(btn => btn.textContent);
+    
+    saveButtons.forEach(btn => {
+      btn.textContent = '✅ Salvo!';
+      btn.style.background = 'var(--success)';
+      btn.style.color = 'white';
+    });
+    
+    setTimeout(() => {
+      saveButtons.forEach((btn, index) => {
+        btn.textContent = originalTexts[index];
+        btn.style.background = '';
+        btn.style.color = '';
+      });
+    }, 2000);
+    
+  } catch (error) {
+    console.error('Erro ao salvar:', error);
+    showAlert('Erro ao salvar alterações: ' + error.message);
+  }
+}
+
+async function submitOrder() {
+  try {
+    const response = await fetch(`${cfg.FUNCTIONS_BASE}/submit-order`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cfg.SUPABASE_ANON}`
+      },
+      body: JSON.stringify({
+        session_id: session.id
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Erro ao enviar pedido');
+    }
+    
+    // Armazenar número do pedido para mostrar na página de sucesso
+    window.lastOrderNumber = result.data?.order_number;
+    
+    console.log('✅ Pedido enviado com sucesso:', result);
+    
+  } catch (error) {
+    console.error('Erro ao enviar pedido:', error);
+    throw error;
+  }
+}
+
 function updateCustomerHeader() {
   console.log('🔍 Debug - updateCustomerHeader chamado com:', customerData);
   
