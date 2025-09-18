@@ -282,12 +282,18 @@ Deno.serve(async (req: Request) => {
 
     // Buscar o próximo número de pedido para exibição
     const { data: nextOrderNumberResult, error: orderNumberError } = await supabase
-      .rpc('get_next_order_number')
+      .from('order_number_seq')
+      .select('last_value')
       .maybeSingle()
     
-    console.log('🔍 Debug - Next order number query:', { nextOrderNumberResult, orderNumberError })
+    // Get next order number by calling the function
+    const { data: nextOrderData, error: nextOrderError } = await supabase
+      .rpc('get_next_order_number')
+      .single()
     
-    const estimatedOrderNumber = nextOrderNumberResult?.next_val || null
+    console.log('🔍 Debug - Next order number query:', { nextOrderData, nextOrderError })
+    
+    const estimatedOrderNumber = nextOrderData?.next_val || null
     console.log('🔍 Debug - Estimated order number:', estimatedOrderNumber)
     
     const { data: session, error: sessionError } = await supabase
