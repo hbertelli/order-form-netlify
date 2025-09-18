@@ -137,12 +137,18 @@ function updateCustomerHeader() {
   console.log('🔍 Debug - Elemento customer-info encontrado:', customerInfoDiv);
   console.log('🔍 Debug - customerInfoDiv.style.display antes:', customerInfoDiv.style.display);
   
+  // Função para capitalizar adequadamente
+  function toTitleCase(str) {
+    if (!str) return '';
+    return str.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+  }
+  
   // Formatar endereço completo
   const endereco = [
-    customerData.logradouro,
+    toTitleCase(customerData.logradouro),
     customerData.numero,
-    customerData.bairro,
-    customerData.cidade,
+    toTitleCase(customerData.bairro),
+    toTitleCase(customerData.cidade),
     customerData.uf,
     customerData.cep
   ].filter(Boolean).join(', ');
@@ -156,8 +162,8 @@ function updateCustomerHeader() {
     <div class="customer-header">
       <div class="customer-main">
         <div class="customer-code">Código: ${customerData.codpessoa}</div>
-        <div class="customer-name">${customerData.nomefantazia || customerData.nome}</div>
-        <div class="customer-razao">${customerData.nome}</div>
+        <div class="customer-name">${toTitleCase(customerData.nomefantazia || customerData.nome)}</div>
+        <div class="customer-razao">${toTitleCase(customerData.nome)}</div>
       </div>
       <div class="customer-details">
         <div class="customer-cnpj">CNPJ: ${customerData.cpfcgc}</div>
