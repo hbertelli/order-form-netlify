@@ -124,10 +124,15 @@ function updateTotalsBoth(){
 }
 
 function updateCustomerHeader() {
+  console.log('🔍 Debug - updateCustomerHeader chamado com:', customerData);
+  
   if (!customerData) return;
   
   const customerInfoDiv = document.getElementById('customer-info');
-  if (!customerInfoDiv) return;
+  if (!customerInfoDiv) {
+    console.error('❌ Elemento customer-info não encontrado!');
+    return;
+  }
   
   // Formatar endereço completo
   const endereco = [
@@ -138,6 +143,8 @@ function updateCustomerHeader() {
     customerData.uf,
     customerData.cep
   ].filter(Boolean).join(', ');
+  
+  console.log('🔍 Debug - Endereço formatado:', endereco);
   
   customerInfoDiv.innerHTML = `
     <div class="customer-header">
@@ -152,6 +159,8 @@ function updateCustomerHeader() {
       </div>
     </div>
   `;
+  
+  console.log('✅ Debug - HTML do cliente inserido no DOM');
 }
 // --- envio (usa mesmo handler nos dois botões, se existirem) ---
 let isSubmitting = false;
@@ -354,14 +363,18 @@ async function loadSession(){
   // Buscar dados completos do cliente
   const { data: customer, error: customerError } = await supabase
     .from("clientes_atacamax")
-    .select("codpessoa, nome, cpfcgc, nomefantazia, razaosocial, endereco, numero, bairro, cidade, uf, cep")
+    .select("codpessoa, nome, cpfcgc, nomefantazia, logradouro, numero, bairro, cidade, uf, cep")
     .eq("codpessoa", session.customer_id)
     .single();
+  
+  console.log('🔍 Debug - Buscando cliente com ID:', session.customer_id);
+  console.log('🔍 Debug - Resultado da consulta do cliente:', { customer, customerError });
   
   if (customerError) {
     console.error('Erro ao buscar dados do cliente:', customerError);
   } else {
     customerData = customer;
+    console.log('🔍 Debug - customerData definido:', customerData);
     updateCustomerHeader();
   }
   
