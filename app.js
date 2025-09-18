@@ -852,6 +852,9 @@ function renderItemsReadonly(){
     const unitPrice = it.unit_price || 0;
     const subtotal = unitPrice * (it.qty || 0);
     
+  }
+  )
+}
 // Inicializar quando o DOM estiver pronto
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
