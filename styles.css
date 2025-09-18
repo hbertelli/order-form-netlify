@@ -156,6 +156,29 @@ h1 {
   hyphens: auto;
 }
 
+/* Mobile improvements for customer header */
+@media (max-width: 767px) {
+  .customer-header {
+    padding: var(--spacing);
+  }
+  
+  .customer-name {
+    font-size: 16px;
+  }
+  
+  .customer-razao {
+    font-size: 13px;
+  }
+  
+  .customer-cnpj {
+    font-size: 12px;
+  }
+  
+  .customer-address {
+    font-size: 11px;
+  }
+}
+
 @media (min-width: 768px) {
   .customer-header {
     display: flex;
@@ -187,6 +210,43 @@ main {
   max-width: 1000px;
   margin: 0 auto;
   padding: var(--spacing-xl) var(--spacing);
+}
+
+/* Mobile spacing improvements */
+@media (max-width: 767px) {
+  main {
+    padding: var(--spacing-lg) var(--spacing-sm);
+  }
+  
+  header {
+    padding: var(--spacing-lg) var(--spacing-sm);
+  }
+  
+  h1 {
+    font-size: 20px;
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .card {
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .card-header {
+    padding: var(--spacing) var(--spacing-md);
+  }
+  
+  .card-header h2 {
+    font-size: 16px;
+  }
+  
+  #items-list {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-sm);
+  }
+  
+  .item-row {
+    padding: var(--spacing-md);
+  }
 }
 
 /* Alert */
@@ -654,6 +714,49 @@ input:focus-visible {
   border: 1px solid var(--gray-200);
   border-radius: var(--radius);
   height: 44px;
+}
+
+/* Mobile adjustments for readonly items */
+@media (max-width: 519px) {
+  .item-row.readonly {
+    grid-template-areas:
+      "title   title"
+      "qty     price"
+      "subtotal subtotal";
+    grid-template-columns: 1fr 1fr;
+    row-gap: var(--spacing);
+  }
+  
+  .item-title-wrap {
+    grid-area: title;
+    min-width: 0;
+  }
+  
+  .qty-display {
+    grid-area: qty;
+    height: 40px;
+    font-size: 14px;
+  }
+  
+  .item-row.readonly .item-price {
+    grid-area: price;
+    font-size: 14px;
+    text-align: right;
+    align-self: center;
+  }
+  
+  .item-row.readonly .item-subtotal {
+    grid-area: subtotal;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    justify-content: center;
+    background: var(--success-light);
+    padding: var(--spacing);
+    border-radius: var(--radius);
+    border: 1px solid var(--success);
+    color: var(--success);
+  }
 }
 
 @media (min-width: 768px) {
