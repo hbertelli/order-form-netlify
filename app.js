@@ -507,3 +507,7 @@ async function loadItems(){
   if (misses) {
     console.warn(`⚠️ Produtos não encontrados para ${misses}/${items.length} itens.`);
     console.warn('🔍 Itens sem produto:', items.filter(x =>
+    )
+    )
+  }
+}
