@@ -150,6 +150,19 @@ function showUsedSessionPage() {
 window.showReadonlyOrder = async function() {
   try {
     // Recarregar os dados para visualização
+    // Primeiro carregar dados do cliente se não estiverem disponíveis
+    if (!customerData && session && session.customer_id) {
+      const { data: customer, error: customerError } = await supabase
+        .from("clientes_atacamax")
+        .select("codpessoa, nome, cpfcgc, nomefantazia, logradouro, numero, bairro, cidade, uf, cep")
+        .eq("codpessoa", session.customer_id)
+        .single();
+      
+      if (!customerError && customer) {
+        customerData = customer;
+      }
+    }
+    
     await loadItems();
     
     // Renderizar a interface em modo somente leitura
