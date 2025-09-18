@@ -744,8 +744,6 @@ function renderItemsReadonly(){
   
   itemsList.innerHTML = html;
   updateTotalsBoth();
-  }
-  )
 }
 
 // Função principal de inicialização
