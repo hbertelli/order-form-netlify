@@ -144,7 +144,7 @@ function updateCustomerHeader() {
       <div class="customer-main">
         <div class="customer-code">Código: ${customerData.codpessoa}</div>
         <div class="customer-name">${customerData.nomefantazia || customerData.nome}</div>
-        <div class="customer-razao">${customerData.razaosocial || customerData.nome}</div>
+        <div class="customer-razao">${customerData.nome}</div>
       </div>
       <div class="customer-details">
         <div class="customer-cnpj">CNPJ: ${customerData.cpfcgc}</div>
