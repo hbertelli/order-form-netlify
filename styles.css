@@ -294,7 +294,6 @@ main {
 
 .btn-remove:hover {
   background: var(--danger-light);
-  font-size: 20px;
 }
 
 .actions button {
