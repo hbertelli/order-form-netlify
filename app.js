@@ -380,11 +380,7 @@ async function loadSession(){
   }
   
   if (data.used) {
-    showErrorPage(
-      "Pedido Já Enviado",
-      "Este link já foi utilizado para enviar um pedido. Cada link pode ser usado apenas uma vez por questões de segurança.",
-      "✅"
-    );
+    showUsedSessionPage();
     throw new Error("Sessão já utilizada.");
   }
   
