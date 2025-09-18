@@ -100,7 +100,7 @@ Deno.serve(async (req: Request) => {
       // Primeira tentativa: busca por CNPJ formatado
       let { data, error } = await supabase
         .from('clientes_atacamax')
-        .select('codpessoa, nome, cpfcgc, nomefantasia, razaosocial, endereco, numero, bairro, cidade, uf, cep')
+        .select('codpessoa, nome, cpfcgc, nomefantazia, razaosocial, endereco, numero, bairro, cidade, uf, cep')
         .eq('cpfcgc', formattedCnpj)
         .maybeSingle()
       
@@ -111,7 +111,7 @@ Deno.serve(async (req: Request) => {
         console.log('🔍 Debug - Tentando busca com CNPJ limpo:', cleanInputCnpj)
         const result2 = await supabase
           .from('clientes_atacamax')
-          .select('codpessoa, nome, cpfcgc, nomefantasia, razaosocial, endereco, numero, bairro, cidade, uf, cep')
+          .select('codpessoa, nome, cpfcgc, nomefantazia, razaosocial, endereco, numero, bairro, cidade, uf, cep')
           .eq('cpfcgc', cleanInputCnpj)
           .maybeSingle()
         
@@ -125,7 +125,7 @@ Deno.serve(async (req: Request) => {
         console.log('🔍 Debug - Tentando busca com CNPJ original:', actualCnpj)
         const result3 = await supabase
           .from('clientes_atacamax')
-          .select('codpessoa, nome, cpfcgc, nomefantasia, razaosocial, endereco, numero, bairro, cidade, uf, cep')
+          .select('codpessoa, nome, cpfcgc, nomefantazia, razaosocial, endereco, numero, bairro, cidade, uf, cep')
           .eq('cpfcgc', actualCnpj)
           .maybeSingle()
         
@@ -139,7 +139,7 @@ Deno.serve(async (req: Request) => {
         console.log('🔍 Debug - Tentando busca com LIKE')
         const result4 = await supabase
           .from('clientes_atacamax')
-          .select('codpessoa, nome, cpfcgc, nomefantasia, razaosocial, endereco, numero, bairro, cidade, uf, cep')
+          .select('codpessoa, nome, cpfcgc, nomefantazia, razaosocial, endereco, numero, bairro, cidade, uf, cep')
           .like('cpfcgc', `%${cleanInputCnpj}%`)
           .limit(5)
         
@@ -296,7 +296,7 @@ Deno.serve(async (req: Request) => {
         expires_at: expiresAt.toISOString(),
         used: false,
         estimated_order_number: estimatedOrderNumber
-      })
+      .select('codpessoa, nome, cpfcgc, nomefantazia, razaosocial, endereco, numero, bairro, cidade, uf, cep')
       .select('id, customer_id, expires_at, used, created_at')
       .single()
 
@@ -369,7 +369,7 @@ Deno.serve(async (req: Request) => {
              id: customer.codpessoa,
             name: customer.nome,
             cnpj: customer.cpfcgc,
-            nome_fantasia: customer.nomefantasia,
+            nome_fantasia: customer.nomefantazia,
             razao_social: customer.razaosocial,
             endereco: customer.endereco,
             numero: customer.numero,

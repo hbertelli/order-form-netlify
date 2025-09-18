@@ -143,7 +143,7 @@ function updateCustomerHeader() {
     <div class="customer-header">
       <div class="customer-main">
         <div class="customer-code">Código: ${customerData.codpessoa}</div>
-        <div class="customer-name">${customerData.nomefantasia || customerData.nome}</div>
+        <div class="customer-name">${customerData.nomefantazia || customerData.nome}</div>
         <div class="customer-razao">${customerData.razaosocial || customerData.nome}</div>
       </div>
       <div class="customer-details">
@@ -354,7 +354,7 @@ async function loadSession(){
   // Buscar dados completos do cliente
   const { data: customer, error: customerError } = await supabase
     .from("clientes_atacamax")
-    .select("codpessoa, nome, cpfcgc, nomefantasia, razaosocial, endereco, numero, bairro, cidade, uf, cep")
+    .select("codpessoa, nome, cpfcgc, nomefantazia, razaosocial, endereco, numero, bairro, cidade, uf, cep")
     .eq("codpessoa", session.customer_id)
     .single();
   
