@@ -523,9 +523,12 @@ async function loadSession(){
     throw new Error("Sessão não encontrada");
   }
   
+  // Sempre definir session, mesmo se usada
+  session = data;
+  
   if (data.used) {
     showUsedSessionPage();
-    return; // Não lança erro, apenas retorna
+    return; // Retorna mas session já foi definida
   }
   
   if (new Date(data.expires_at) < new Date()) {
@@ -537,7 +540,6 @@ async function loadSession(){
     throw new Error("Sessão expirada.");
   }
   
-  session = data;
   sessionInfo.textContent = `Expira em ${fmtDate(session.expires_at)}`;
   
   // Atualizar título com número do pedido se disponível
@@ -725,6 +727,12 @@ async function init() {
     
     // Carregar sessão e validar token
     await loadSession();
+    
+    // Se a sessão foi usada, não continua com a inicialização normal
+    if (session && session.used) {
+      console.log('✅ Sessão usada detectada - inicialização interrompida');
+      return;
+    }
     
     // Carregar itens do pedido
     await loadItems();
