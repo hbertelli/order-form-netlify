@@ -322,7 +322,7 @@ async function loadSession(){
   
   // Exibir número estimado do pedido se disponível
   if (session.estimated_order_number) {
-    orderPreview.textContent = `Pedido estimado: #${session.estimated_order_number}`;
+    orderPreview.textContent = `Número estimado do pedido: #${session.estimated_order_number}`;
     orderPreview.style.display = 'block';
   } else {
     orderPreview.style.display = 'none';
