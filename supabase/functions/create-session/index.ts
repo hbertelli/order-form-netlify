@@ -282,7 +282,7 @@ Deno.serve(async (req: Request) => {
 
     // Buscar o próximo número de pedido para exibição
     const { data: nextOrderData, error: nextOrderError } = await supabase
-      .rpc('get_next_order_number')
+      .rpc('get_and_consume_order_number')
     
     console.log('🔍 Debug - Next order number query:', { nextOrderData, nextOrderError })
     

@@ -251,6 +251,7 @@ Deno.serve(async (req: Request) => {
       .insert({
         session_id: sessionId,
         customer_id: session.customer_id,
+        order_number: session.estimated_order_number,
         payload: orderPayload
       })
       .select('id, order_number, submitted_at')
