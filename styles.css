@@ -212,9 +212,14 @@ main {
 }
 
 .item-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing);
+  display: grid;
+  grid-template-areas:
+    "title   price"
+    "qty     subtotal"
+    "remove  remove";
+  grid-template-columns: 1fr auto;
+  column-gap: var(--spacing-md);
+  row-gap: var(--spacing);
   padding: var(--spacing-lg);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
@@ -248,7 +253,8 @@ main {
 }
 
 .item-title-wrap {
-  width: 100%;
+  grid-area: title;
+  min-width: 0;
 }
 
 .item-title {
@@ -265,14 +271,18 @@ main {
 }
 
 .item-price {
+  grid-area: price;
   font-weight: 700;
   font-size: 16px;
   color: var(--success);
-  min-width: 80px;
+  min-width: 90px;
+  text-align: right;
+  align-self: center;
 }
 
 .qty-input {
-  width: 80px;
+  grid-area: qty;
+  width: 100px;
   height: 44px;
   padding: 0 var(--spacing);
   font-size: 16px;
@@ -295,14 +305,21 @@ main {
 }
 
 .item-subtotal {
+  grid-area: subtotal;
   font-weight: 700;
   font-size: 16px;
-  min-width: 90px;
+  min-width: 100px;
+  text-align: right;
   color: var(--gray-900);
+  padding: 0 var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .btn-remove {
-  margin-left: auto;
+  grid-area: remove;
+  justify-self: end;
   height: 40px;
   padding: 0 var(--spacing-md);
   background: transparent;
@@ -499,34 +516,13 @@ footer {
 /* Responsive design */
 @media (min-width: 520px) {
   .item-row {
-    flex-direction: row;
-    align-items: center;
-  }
-  
-  .item-title-wrap {
-    flex: 2;
-    min-width: 0;
-  }
-  
-  .item-price {
-    flex-shrink: 0;
-    margin-right: var(--spacing);
+    grid-template-areas: "title qty price subtotal remove";
+    grid-template-columns: 1fr 120px 130px 140px 120px;
+    row-gap: var(--spacing-sm);
   }
   
   .qty-input {
-    width: 80px;
-    flex-shrink: 0;
-    margin-right: var(--spacing);
-  }
-  
-  .item-subtotal {
-    flex-shrink: 0;
-    margin-right: var(--spacing);
-  }
-  
-  .btn-remove {
-    flex-shrink: 0;
-    margin-left: 0;
+    width: 110px;
   }
 }
 
@@ -536,23 +532,8 @@ footer {
   }
   
   .item-row {
+    grid-template-columns: 1fr 130px 140px 150px 130px;
     padding: var(--spacing-xl);
-  }
-  
-  .item-title-wrap {
-    flex: 3;
-  }
-  
-  .item-price {
-    margin-right: var(--spacing-lg);
-  }
-  
-  .qty-input {
-    margin-right: var(--spacing-lg);
-  }
-  
-  .item-subtotal {
-    margin-right: var(--spacing-lg);
   }
   
   .actions {
@@ -565,20 +546,8 @@ footer {
 }
 
 @media (min-width: 1024px) {
-  .item-title-wrap {
-    flex: 4;
-  }
-  
-  .item-price {
-    margin-right: var(--spacing-xl);
-  }
-  
-  .qty-input {
-    margin-right: var(--spacing-xl);
-  }
-  
-  .item-subtotal {
-    margin-right: var(--spacing-xl);
+  .item-row {
+    grid-template-columns: 2fr 140px 160px 160px 140px;
   }
 }
 
