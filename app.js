@@ -11,7 +11,21 @@ const orderPreview = document.getElementById("order-preview");
 const emptyHint   = document.getElementById("empty-hint");
 
 function showAlert(msg){ alertBox.textContent = msg || ""; alertBox.style.display = msg ? "block":"none"; }
-function fmtDate(s){ try{ return new Date(s).toLocaleString("pt-BR",{ timeZone:"America/Sao_Paulo" }); } catch { return s; } }
+function fmtDate(s){ 
+  try{ 
+    return new Date(s).toLocaleString("pt-BR", { 
+      timeZone: "America/Sao_Paulo",
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }); 
+  } catch { 
+    return s; 
+  } 
+}
 
 function showErrorPage(title, message, icon = "❌") {
   document.body.innerHTML = `

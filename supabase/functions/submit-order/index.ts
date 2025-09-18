@@ -249,7 +249,15 @@ Deno.serve(async (req: Request) => {
       },
       session_info: {
         session_id: sessionId,
-        submitted_at: new Date().toISOString()
+        submitted_at: new Date().toLocaleString('pt-BR', { 
+          timeZone: 'America/Sao_Paulo',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        })
       }
     }
 
@@ -284,9 +292,12 @@ Deno.serve(async (req: Request) => {
     console.log('✅ Pedido salvo na tabela orders_submitted:', savedOrder.id)
     console.log('📋 Número do pedido:', savedOrder.order_number)
 
+    // Gerar link de consulta do pedido
+    const orderViewUrl = `${req.headers.get('origin') || 'https://stellar-cranachan-2b11bb.netlify.app'}/?token=${sessionId}`
+
     // Enviar email de notificação
     try {
-      await sendOrderNotificationEmail(orderPayload, savedOrder.id, savedOrder.order_number)
+      await sendOrderNotificationEmail(orderPayload, savedOrder.id, savedOrder.order_number, orderViewUrl)
       console.log('✅ Email de notificação enviado com sucesso')
     } catch (emailError) {
       console.error('❌ Erro ao enviar email:', emailError)
@@ -370,7 +381,19 @@ Deno.serve(async (req: Request) => {
     )
   }
 })
-async function sendOrderNotificationEmail(orderPayload: any, orderId: string, orderNumber: number) {
+async function sendOrderNotificationEmail(orderPayload: any, orderId: string, orderNumber: number, orderViewUrl: string) {
+  // Formatar data/hora para o timezone de Brasília
+  const submittedAtBrasilia = new Date().toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+
   const emailHtml = `
     <!DOCTYPE html>
     <html>
@@ -382,6 +405,9 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string, or
         .header { background: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
         .customer-info { background: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .order-link { background: #059669; color: white; padding: 15px; text-align: center; border-radius: 6px; margin: 20px 0; }
+        .order-link a { color: white; text-decoration: none; font-weight: 600; }
+        .order-link a:hover { text-decoration: underline; }
         .items-table { width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; }
         .items-table th, .items-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
         .items-table th { background: #f3f4f6; font-weight: 600; }
@@ -397,11 +423,17 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string, or
         </div>
         
         <div class="content">
+          <div class="order-link">
+            <p style="margin: 0 0 10px; font-size: 14px;">📋 Consultar Pedido Completo:</p>
+            <a href="${orderViewUrl}" target="_blank">Ver Detalhes do Pedido #${orderNumber}</a>
+          </div>
+          
           <div class="customer-info">
             <h3>👤 Dados do Cliente</h3>
             <p><strong>Nome:</strong> ${orderPayload.customer.name}</p>
             <p><strong>Código:</strong> ${orderPayload.customer.id}</p>
             <p><strong>CNPJ:</strong> ${orderPayload.customer.cnpj}</p>
+            <p><strong>Endereço:</strong> ${orderPayload.customer.endereco}, ${orderPayload.customer.numero} - ${orderPayload.customer.bairro}, ${orderPayload.customer.cidade}/${orderPayload.customer.uf}</p>
           </div>
           
           <h3>📦 Itens do Pedido</h3>
@@ -435,8 +467,11 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string, or
         </div>
         
         <div class="footer">
-          <p>Pedido enviado em ${new Date(orderPayload.session_info.submitted_at).toLocaleString('pt-BR')}</p>
+          <p>Pedido enviado em ${submittedAtBrasilia}</p>
           <p>Sistema de Pedidos - Wise Sales</p>
+          <p style="margin-top: 10px; font-size: 11px; color: #9ca3af;">
+            💡 Clique no link acima para visualizar o pedido completo com todos os detalhes
+          </p>
         </div>
       </div>
     </body>
