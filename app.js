@@ -122,7 +122,7 @@ function showUsedSessionPage() {
             💡 Você pode visualizar os detalhes do pedido abaixo
           </p>
         </div>
-        <button onclick="showReadonlyOrder()" style="
+        <button onclick="window.showReadonlyOrder()" style="
           background: var(--primary);
           color: white;
           border: none;
@@ -147,7 +147,7 @@ function showUsedSessionPage() {
   `;
 }
 
-async function showReadonlyOrder() {
+window.showReadonlyOrder = async function() {
   try {
     // Recarregar os dados para visualização
     await loadItems();
@@ -182,7 +182,7 @@ async function showReadonlyOrder() {
         <div class="actions">
           <span>💰 Total: <strong id="order-total">R$ 0,00</strong></span>
           <div style="display: flex; gap: 12px;">
-            <button onclick="showUsedSessionPage()" type="button" style="
+            <button onclick="window.showUsedSessionPage()" type="button" style="
               background: var(--gray-100);
               color: var(--gray-700);
               border: 1px solid var(--gray-200);
@@ -212,6 +212,9 @@ async function showReadonlyOrder() {
     alert('Erro ao carregar os dados do pedido: ' + error.message);
   }
 }
+
+// Tornar showUsedSessionPage disponível globalmente também
+window.showUsedSessionPage = showUsedSessionPage;
 
 if (!token) { 
   showErrorPage(
@@ -522,7 +525,7 @@ async function loadSession(){
   
   if (data.used) {
     showUsedSessionPage();
-    throw new Error("Sessão já utilizada.");
+    return; // Não lança erro, apenas retorna
   }
   
   if (new Date(data.expires_at) < new Date()) {
