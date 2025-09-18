@@ -367,6 +367,12 @@ async function loadSession(){
   session = data;
   sessionInfo.textContent = `Expira em ${fmtDate(session.expires_at)}`;
   
+  // Atualizar título com número do pedido se disponível
+  const titleElement = document.querySelector('h1');
+  if (session.estimated_order_number && titleElement) {
+    titleElement.textContent = `📋 Revisar Pedido #${session.estimated_order_number}`;
+  }
+  
   // Buscar dados completos do cliente
   const { data: customer, error: customerError } = await supabase
     .from("clientes_atacamax")
@@ -385,13 +391,8 @@ async function loadSession(){
     updateCustomerHeader();
   }
   
-  // Exibir número estimado do pedido se disponível
-  if (session.estimated_order_number) {
-    orderPreview.textContent = `Número estimado do pedido: #${session.estimated_order_number}`;
-    orderPreview.style.display = 'block';
-  } else {
-    orderPreview.style.display = 'none';
-  }
+  // Esconder a linha do número estimado já que agora está no título
+  orderPreview.style.display = 'none';
 }
 
 async function loadItems(){
