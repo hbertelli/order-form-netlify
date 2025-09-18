@@ -281,11 +281,15 @@ Deno.serve(async (req: Request) => {
     expiresAt.setHours(expiresAt.getHours() + 48) // Expira em 48 horas
 
     // Buscar o próximo número de pedido para exibição
-    const { data: nextOrderNumberResult } = await supabase
+    const { data: nextOrderNumberResult, error: orderNumberError } = await supabase
       .rpc('get_next_order_number')
-      .single()
+      .maybeSingle()
+    
+    console.log('🔍 Debug - Next order number query:', { nextOrderNumberResult, orderNumberError })
     
     const estimatedOrderNumber = nextOrderNumberResult?.next_val || null
+    console.log('🔍 Debug - Estimated order number:', estimatedOrderNumber)
+    
     const { data: session, error: sessionError } = await supabase
       .from('order_sessions')
       .insert({
@@ -293,8 +297,7 @@ Deno.serve(async (req: Request) => {
         expires_at: expiresAt.toISOString(),
         used: false,
         estimated_order_number: estimatedOrderNumber
-      }
-      )
+      })
       .select('id, customer_id, expires_at, used, created_at')
       .single()
 
@@ -356,7 +359,7 @@ Deno.serve(async (req: Request) => {
     // Usar o session_id diretamente como token
     const token = session.id
     const orderUrl = `${req.headers.get('origin') || 'https://stellar-cranachan-2b11bb.netlify.app'}/?token=${token}`
-      .single()
+    
     return new Response(
       JSON.stringify({
         success: true,

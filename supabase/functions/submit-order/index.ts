@@ -253,7 +253,7 @@ Deno.serve(async (req: Request) => {
         customer_id: session.customer_id,
         payload: orderPayload
       })
-      .select('id, order_number, submitted_at')
+      .select('id, order_number, submitted_at, created_at')
       .single()
 
     if (saveOrderError) {
