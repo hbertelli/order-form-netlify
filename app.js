@@ -213,6 +213,147 @@ async function showReadonlyOrder() {
   }
 }
 
+function showUsedSessionPage() {
+  document.body.innerHTML = `
+    <div style="
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--gray-50) 0%, #ffffff 100%);
+      padding: 20px;
+    ">
+      <div style="
+        max-width: 500px;
+        background: white;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: var(--shadow-lg);
+        text-align: center;
+        border: 1px solid var(--gray-200);
+      ">
+        <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
+        <h1 style="
+          font-size: 28px;
+          font-weight: 700;
+          margin: 0 0 16px;
+          color: var(--success);
+        ">Pedido Já Enviado</h1>
+        <p style="
+          font-size: 16px;
+          line-height: 1.6;
+          margin: 0 0 24px;
+          color: var(--gray-600);
+        ">
+          Este pedido já foi enviado anteriormente e não pode mais ser editado.
+        </p>
+        <div style="
+          background: var(--primary-light);
+          padding: 16px;
+          border-radius: 8px;
+          border-left: 4px solid var(--primary);
+          margin-bottom: 24px;
+        ">
+          <p style="
+            margin: 0;
+            font-size: 14px;
+            color: var(--primary);
+            font-weight: 600;
+          ">
+            💡 Você pode visualizar os detalhes do pedido abaixo
+          </p>
+        </div>
+        <button onclick="showReadonlyOrder()" style="
+          background: var(--primary);
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          margin-bottom: 16px;
+          transition: all 0.2s ease;
+        " onmouseover="this.style.background='var(--primary-hover)'" onmouseout="this.style.background='var(--primary)'">
+          👁️ Ver Pedido (Somente Leitura)
+        </button>
+        <br>
+        <small style="
+          color: var(--gray-500);
+          font-size: 13px;
+        ">
+          Entre em contato conosco se precisar fazer alterações.
+        </small>
+      </div>
+    </div>
+  `;
+}
+
+async function showReadonlyOrder() {
+  try {
+    // Recarregar os dados para visualização
+    await loadItems();
+    
+    // Renderizar a interface em modo somente leitura
+    document.body.innerHTML = `
+      <header>
+        <h1>📋 Pedido Enviado ${session.estimated_order_number ? `#${session.estimated_order_number}` : ''}</h1>
+        <div id="customer-info" style="margin: 16px 0;"></div>
+        <p id="session-info">Pedido enviado em ${fmtDate(session.created_at)}</p>
+        <div style="
+          background: rgba(255, 255, 255, 0.1);
+          padding: 12px;
+          border-radius: 8px;
+          margin-top: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+        ">
+          <p style="margin: 0; font-size: 14px; font-weight: 600;">
+            🔒 Visualização Somente Leitura
+          </p>
+        </div>
+      </header>
+
+      <main>
+        <section id="items-section" class="card">
+          <div class="card-header">
+            <h2>🛒 Itens do Pedido</h2>
+          </div>
+          <div id="items-list"></div>
+        </section>
+        
+        <div class="actions">
+          <span>💰 Total: <strong id="order-total">R$ 0,00</strong></span>
+          <div style="display: flex; gap: 12px;">
+            <button onclick="showUsedSessionPage()" type="button" style="
+              background: var(--gray-100);
+              color: var(--gray-700);
+              border: 1px solid var(--gray-200);
+              height: 48px;
+              padding: 0 24px;
+              border-radius: 8px;
+              font-weight: 600;
+              cursor: pointer;
+            ">← Voltar</button>
+          </div>
+        </div>
+      </main>
+
+      <footer>
+        <small>🔒 Pedido já enviado - Visualização somente leitura</small>
+      </footer>
+    `;
+    
+    // Atualizar informações do cliente
+    updateCustomerHeader();
+    
+    // Renderizar itens em modo somente leitura
+    renderItemsReadonly();
+    
+  } catch (error) {
+    console.error('Erro ao carregar visualização:', error);
+    alert('Erro ao carregar os dados do pedido: ' + error.message);
+  }
+}
+
 if (!token) { 
   showErrorPage(
     "Link Inválido", 
@@ -711,147 +852,6 @@ function renderItemsReadonly(){
     const unitPrice = it.unit_price || 0;
     const subtotal = unitPrice * (it.qty || 0);
     
-    return `
-      <div class="item-row readonly">
-        <div class="item-title-wrap">
-          <div class="item-title">${p.descricao || 'Sem descrição'}</div>
-          <div class="item-meta">Código: ${p.codprodfilho}</div>
-        </div>
-        <div class="qty-display">${it.qty || 1}</div>
-        <div class="item-price">${formatBRL(unitPrice)}</div>
-        <div class="item-subtotal">${formatBRL(subtotal)}</div>
-      </div>
-    `;
-  }).join("");
-  
-  itemsList.innerHTML = html;
-  updateTotalsBoth();
-}
-
-/* ---------- event handlers ---------- */
-function handleQtyChange(e) {
-  const itemId = e.target.dataset.itemId;
-  const newQty = Math.max(1, parseInt(e.target.value) || 1);
-  
-  const item = items.find(it => String(it.id) === String(itemId));
-  if (item) {
-    item.qty = newQty;
-    e.target.value = newQty; // Garantir que o input mostre o valor correto
-    
-    // Atualizar subtotal do item
-    const row = e.target.closest('.item-row');
-    const subtotalEl = row.querySelector('.item-subtotal');
-    const subtotal = (item.unit_price || 0) * newQty;
-    subtotalEl.textContent = formatBRL(subtotal);
-    
-    updateTotalsBoth();
-  }
-}
-
-function handleRemoveItem(e) {
-  const itemId = e.target.dataset.itemId;
-  const index = items.findIndex(it => String(it.id) === String(itemId));
-  
-  if (index >= 0) {
-    items.splice(index, 1);
-    renderItems();
-  }
-}
-
-/* ---------- save/submit ---------- */
-async function saveChanges() {
-  if (!session || !items.length) return;
-  
-  try {
-    // Preparar updates em lotes
-    const updates = items.map(it => ({
-      id: it.id,
-      qty: it.qty || 1
-    }));
-    
-    // Atualizar no Supabase
-    for (const update of updates) {
-      const { error } = await supabase
-        .from('order_items')
-        .update({ qty: update.qty })
-        .eq('id', update.id);
-      
-      if (error) throw error;
-    }
-    
-    console.log('✅ Alterações salvas com sucesso');
-  } catch (error) {
-    console.error('❌ Erro ao salvar:', error);
-    throw new Error('Erro ao salvar alterações: ' + error.message);
-  }
-}
-
-async function submitOrder() {
-  if (!session) throw new Error('Sessão não encontrada');
-  
-  const response = await fetch(`${cfg.FUNCTIONS_BASE}/submit-order`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${cfg.SUPABASE_ANON}`
-    },
-    body: JSON.stringify({
-      session_id: session.id
-    })
-  });
-  
-  const result = await response.json();
-  
-  if (!result.success) {
-    throw new Error(result.message || 'Erro ao enviar pedido');
-  }
-  
-  // Salvar número do pedido para mostrar na tela de sucesso
-  if (result.data?.order_number) {
-    window.lastOrderNumber = result.data.order_number;
-  }
-  
-  console.log('✅ Pedido enviado com sucesso:', result.data);
-}
-
-/* ---------- initialization ---------- */
-async function init() {
-  try {
-    console.log('🚀 Iniciando aplicação...');
-    
-    await loadSession();
-    console.log('✅ Sessão carregada');
-    
-    await loadItems();
-    console.log('✅ Itens carregados:', items.length);
-    
-    renderItems();
-    console.log('✅ Interface renderizada');
-    
-    // Configurar event listeners dos botões principais
-    const mainSaveBtn = document.getElementById('main-save-btn');
-    const mainSubmitBtn = document.getElementById('main-submit-btn');
-    const footerSaveBtn = document.getElementById('footer-save-btn');
-    const footerSubmitBtn = document.getElementById('footer-submit-btn');
-    
-    if (mainSaveBtn) mainSaveBtn.addEventListener('click', saveChanges);
-    if (footerSaveBtn) footerSaveBtn.addEventListener('click', saveChanges);
-    if (mainSubmitBtn) mainSubmitBtn.addEventListener('click', handleSubmit);
-    if (footerSubmitBtn) footerSubmitBtn.addEventListener('click', handleSubmit);
-    
-    // Configurar controle de visibilidade das barras de ação
-    window.addEventListener('scroll', updateActionBarsVisibility);
-    window.addEventListener('resize', updateActionBarsVisibility);
-    updateActionBarsVisibility();
-    
-    console.log('✅ Aplicação inicializada com sucesso');
-    
-  } catch (error) {
-    console.error('❌ Erro na inicialização:', error);
-    // Os erros já são tratados pelas funções individuais
-  }
-}
-
 // Inicializar quando o DOM estiver pronto
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
