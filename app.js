@@ -322,7 +322,7 @@ async function loadSession(){
   
   // Exibir número estimado do pedido se disponível
   if (session.estimated_order_number) {
-    orderPreview.textContent = `Número estimado do pedido: #${session.estimated_order_number}`;
+    orderPreview.textContent = `Pedido estimado: #${session.estimated_order_number}`;
     orderPreview.style.display = 'block';
   } else {
     orderPreview.style.display = 'none';
@@ -574,8 +574,6 @@ async function submitOrder(){
   if (result.data && result.data.order_number) {
     window.lastOrderNumber = result.data.order_number;
     console.log('📋 Número final do pedido:', window.lastOrderNumber);
-  } else if (result.success && result.data) {
-    console.log('⚠️ Resposta de sucesso mas sem order_number:', result.data);
   }
 }
 

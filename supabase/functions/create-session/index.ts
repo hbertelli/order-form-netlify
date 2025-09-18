@@ -281,19 +281,13 @@ Deno.serve(async (req: Request) => {
     expiresAt.setHours(expiresAt.getHours() + 48) // Expira em 48 horas
 
     // Buscar o próximo número de pedido para exibição
-    const { data: nextOrderNumberResult, error: orderNumberError } = await supabase
-      .from('order_number_seq')
-      .select('last_value')
-      .maybeSingle()
-    
-    // Get next order number by calling the function
     const { data: nextOrderData, error: nextOrderError } = await supabase
       .rpc('get_next_order_number')
-      .single()
+      .maybeSingle()
     
     console.log('🔍 Debug - Next order number query:', { nextOrderData, nextOrderError })
     
-    const estimatedOrderNumber = nextOrderData?.next_val || null
+    const estimatedOrderNumber = nextOrderData?.[0]?.next_val || nextOrderData?.next_val || null
     console.log('🔍 Debug - Estimated order number:', estimatedOrderNumber)
     
     const { data: session, error: sessionError } = await supabase
