@@ -86,6 +86,7 @@ const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
 });
 
 let session = null;
+let customerData = null;
 let items   = [];
 
 /* ---------- helpers ---------- */
@@ -122,6 +123,36 @@ function updateTotalsBoth(){
   if (footerTotal) footerTotal.textContent = txt;
 }
 
+function updateCustomerHeader() {
+  if (!customerData) return;
+  
+  const customerInfoDiv = document.getElementById('customer-info');
+  if (!customerInfoDiv) return;
+  
+  // Formatar endereço completo
+  const endereco = [
+    customerData.endereco,
+    customerData.numero,
+    customerData.bairro,
+    customerData.cidade,
+    customerData.uf,
+    customerData.cep
+  ].filter(Boolean).join(', ');
+  
+  customerInfoDiv.innerHTML = `
+    <div class="customer-header">
+      <div class="customer-main">
+        <div class="customer-code">Código: ${customerData.codpessoa}</div>
+        <div class="customer-name">${customerData.nomefantasia || customerData.nome}</div>
+        <div class="customer-razao">${customerData.razaosocial || customerData.nome}</div>
+      </div>
+      <div class="customer-details">
+        <div class="customer-cnpj">CNPJ: ${customerData.cpfcgc}</div>
+        <div class="customer-address">${endereco}</div>
+      </div>
+    </div>
+  `;
+}
 // --- envio (usa mesmo handler nos dois botões, se existirem) ---
 let isSubmitting = false;
 
@@ -319,6 +350,20 @@ async function loadSession(){
   
   session = data;
   sessionInfo.textContent = `Expira em ${fmtDate(session.expires_at)}`;
+  
+  // Buscar dados completos do cliente
+  const { data: customer, error: customerError } = await supabase
+    .from("clientes_atacamax")
+    .select("codpessoa, nome, cpfcgc, nomefantasia, razaosocial, endereco, numero, bairro, cidade, uf, cep")
+    .eq("codpessoa", session.customer_id)
+    .single();
+  
+  if (customerError) {
+    console.error('Erro ao buscar dados do cliente:', customerError);
+  } else {
+    customerData = customer;
+    updateCustomerHeader();
+  }
   
   // Exibir número estimado do pedido se disponível
   if (session.estimated_order_number) {
