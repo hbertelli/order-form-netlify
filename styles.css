@@ -342,36 +342,31 @@ main {
   transform: translateY(0);
 }
 
-/* Empty state */
-.empty {
-  text-align: center;
-  padding: var(--spacing-2xl);
-  color: var(--gray-500);
-  font-style: italic;
+/* Responsive design */
+@media (min-width: 520px) {
+  .item-row {
+    grid-template-areas: "title qty price subtotal remove";
+    grid-template-columns: 1fr 120px 130px 140px 120px;
+    row-gap: var(--spacing-sm);
+  }
+  
+  .qty-input {
+    width: 110px;
+  }
 }
 
-/* Actions */
-.actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
-  padding: var(--spacing-xl);
-  background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  border: 1px solid var(--gray-200);
-  flex-wrap: wrap;
+@media (min-width: 768px) {
+  .item-row {
+    grid-template-columns: 1fr 130px 140px 150px 130px;
+    padding: var(--spacing-xl);
+  }
 }
 
-.actions span {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--gray-800);
+@media (min-width: 1024px) {
+  .item-row {
+    grid-template-columns: 2fr 140px 160px 160px 140px;
+  }
 }
-
-.actions strong {
-  color: var(--success);
   font-size: 20px;
 }
 
