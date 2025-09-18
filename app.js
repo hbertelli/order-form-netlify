@@ -131,7 +131,7 @@ function updateCustomerHeader() {
   
   // Formatar endereço completo
   const endereco = [
-    customerData.endereco,
+    customerData.logradouro,
     customerData.numero,
     customerData.bairro,
     customerData.cidade,
