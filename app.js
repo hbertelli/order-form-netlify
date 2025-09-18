@@ -137,10 +137,37 @@ function updateCustomerHeader() {
   console.log('🔍 Debug - Elemento customer-info encontrado:', customerInfoDiv);
   console.log('🔍 Debug - customerInfoDiv.style.display antes:', customerInfoDiv.style.display);
   
-  // Função para capitalizar adequadamente
+  // Função para capitalizar adequadamente com suporte a caracteres especiais
   function toTitleCase(str) {
     if (!str) return '';
-    return str.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    
+    // Lista de preposições e artigos que devem ficar em minúsculo (exceto no início)
+    const smallWords = ['da', 'de', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'nas', 'nos', 'a', 'o', 'as', 'os'];
+    
+    return str.toLowerCase()
+      .split(' ')
+      .map((word, index) => {
+        // Primeira palavra sempre maiúscula
+        if (index === 0) {
+          return capitalizeWord(word);
+        }
+        
+        // Preposições e artigos ficam em minúsculo (exceto se for a primeira palavra)
+        if (smallWords.includes(word.toLowerCase())) {
+          return word.toLowerCase();
+        }
+        
+        return capitalizeWord(word);
+      })
+      .join(' ');
+  }
+  
+  // Função auxiliar para capitalizar uma palavra considerando caracteres especiais
+  function capitalizeWord(word) {
+    if (!word) return '';
+    
+    // Usar regex que funciona com caracteres Unicode (incluindo acentos)
+    return word.replace(/^\p{L}/u, char => char.toUpperCase());
   }
   
   // Formatar endereço completo
