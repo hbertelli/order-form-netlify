@@ -217,8 +217,17 @@ window.showReadonlyOrder = async function() {
     // Atualizar informações do cliente
     updateCustomerHeader();
     
-    // Renderizar itens em modo somente leitura após carregar
-    renderItemsReadonly();
+    // Aguardar um pouco para garantir que o DOM foi atualizado
+    setTimeout(() => {
+      // Verificar se o elemento existe antes de renderizar
+      const itemsListElement = document.getElementById('items-list');
+      console.log('🔍 Debug - Elemento items-list encontrado:', !!itemsListElement);
+      if (itemsListElement) {
+        renderItemsReadonly();
+      } else {
+        console.error('❌ Elemento items-list não encontrado no DOM');
+      }
+    }, 100);
     
   } catch (error) {
     console.error('Erro ao carregar visualização:', error);
@@ -854,6 +863,12 @@ function renderItems(){
 
 function renderItemsReadonly(){
   console.log('🔍 Debug - renderItemsReadonly chamado com', items.length, 'itens');
+  
+  const itemsList = document.getElementById('items-list');
+  if (!itemsList) {
+    console.error('❌ Elemento items-list não encontrado na renderItemsReadonly');
+    return;
+  }
   
   if (!items.length) {
     itemsList.innerHTML = "<div class='empty'><p>Nenhum item encontrado</p></div>";
