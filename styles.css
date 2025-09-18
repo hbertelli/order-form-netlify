@@ -505,13 +505,22 @@ footer {
 /* Responsive design */
 @media (min-width: 520px) {
   .item-row {
-    grid-template-areas: "title qty price subtotal remove";
-    grid-template-columns: 3fr 90px 110px 130px 110px;
-    row-gap: var(--spacing-sm);
+    flex-direction: row;
+    align-items: center;
+  }
+  
+  .item-title-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .item-controls {
+    flex-shrink: 0;
+    flex-wrap: nowrap;
   }
   
   .qty-input {
-    width: 80px;
+    width: 70px;
   }
 }
 
@@ -521,8 +530,11 @@ footer {
   }
   
   .item-row {
-    grid-template-columns: 4fr 100px 120px 140px 120px;
     padding: var(--spacing-xl);
+  }
+  
+  .item-controls {
+    gap: var(--spacing-lg);
   }
   
   .actions {
@@ -535,8 +547,8 @@ footer {
 }
 
 @media (min-width: 1024px) {
-  .item-row {
-    grid-template-columns: 5fr 100px 120px 140px 120px;
+  .item-controls {
+    gap: var(--spacing-xl);
   }
 }
 
