@@ -714,6 +714,53 @@ function renderItemsReadonly(){
   }
   )
 }
+
+// Função principal de inicialização
+async function init() {
+  try {
+    console.log('🚀 Iniciando aplicação...');
+    
+    // Carregar sessão e validar token
+    await loadSession();
+    
+    // Carregar itens do pedido
+    await loadItems();
+    
+    // Renderizar interface
+    renderItems();
+    
+    // Configurar event listeners para os botões principais
+    const mainSaveBtn = document.getElementById("main-save-btn");
+    const mainSubmitBtn = document.getElementById("main-submit-btn");
+    const footerSaveBtn = document.getElementById("footer-save-btn");
+    const footerSubmitBtn = document.getElementById("footer-submit-btn");
+    
+    if (mainSaveBtn) mainSaveBtn.addEventListener('click', saveChanges);
+    if (mainSubmitBtn) mainSubmitBtn.addEventListener('click', handleSubmit);
+    if (footerSaveBtn) footerSaveBtn.addEventListener('click', saveChanges);
+    if (footerSubmitBtn) footerSubmitBtn.addEventListener('click', handleSubmit);
+    
+    // Configurar controle de visibilidade das barras de ação
+    window.addEventListener('scroll', updateActionBarsVisibility);
+    window.addEventListener('resize', updateActionBarsVisibility);
+    updateActionBarsVisibility();
+    
+    console.log('✅ Aplicação inicializada com sucesso');
+    
+  } catch (error) {
+    console.error('❌ Erro na inicialização:', error);
+    // Se chegou até aqui e não foi tratado pelas funções específicas,
+    // mostra um erro genérico
+    if (!document.body.innerHTML.includes('min-height: 100vh')) {
+      showErrorPage(
+        "Erro Inesperado",
+        `Ocorreu um erro inesperado: ${error.message}. Tente recarregar a página ou solicite um novo link.`,
+        "⚠️"
+      );
+    }
+  }
+}
+
 // Inicializar quando o DOM estiver pronto
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
