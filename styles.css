@@ -554,7 +554,7 @@ footer {
 @media (min-width: 520px) {
   .item-row {
     grid-template-areas: "title qty price subtotal remove";
-    grid-template-columns: 1fr 120px 130px 140px 120px;
+    grid-template-columns: 2fr 120px 130px 140px 120px;
     row-gap: var(--spacing-sm);
   }
   
@@ -569,7 +569,7 @@ footer {
   }
   
   .item-row {
-    grid-template-columns: 1fr 130px 140px 150px 130px;
+    grid-template-columns: 2.5fr 130px 140px 150px 130px;
     padding: var(--spacing-xl);
   }
   
@@ -584,7 +584,7 @@ footer {
 
 @media (min-width: 1024px) {
   .item-row {
-    grid-template-columns: 2fr 140px 160px 160px 140px;
+    grid-template-columns: 3fr 140px 160px 160px 140px;
   }
 }
 
