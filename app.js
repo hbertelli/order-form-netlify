@@ -729,6 +729,21 @@ function renderItemsReadonly(){
     const unitPrice = it.unit_price || 0;
     const subtotal = unitPrice * (it.qty || 0);
     
+    return `
+      <div class="item-row readonly">
+        <div class="item-title-wrap">
+          <div class="item-title">${p.descricao || 'Sem descrição'}</div>
+          <div class="item-meta">Código: ${p.codprodfilho}</div>
+        </div>
+        <div class="qty-display">${it.qty || 1}</div>
+        <div class="item-price">${formatBRL(unitPrice)}</div>
+        <div class="item-subtotal">${formatBRL(subtotal)}</div>
+      </div>
+    `;
+  }).join("");
+  
+  itemsList.innerHTML = html;
+  updateTotalsBoth();
   }
   )
 }
