@@ -217,7 +217,7 @@ window.showReadonlyOrder = async function() {
     // Atualizar informações do cliente
     updateCustomerHeader();
     
-    // Renderizar itens em modo somente leitura
+    // Renderizar itens em modo somente leitura após carregar
     renderItemsReadonly();
     
   } catch (error) {
@@ -853,6 +853,8 @@ function renderItems(){
 }
 
 function renderItemsReadonly(){
+  console.log('🔍 Debug - renderItemsReadonly chamado com', items.length, 'itens');
+  
   if (!items.length) {
     itemsList.innerHTML = "<div class='empty'><p>Nenhum item encontrado</p></div>";
     updateTotalsBoth();
@@ -865,6 +867,14 @@ function renderItemsReadonly(){
     
     const unitPrice = it.unit_price || 0;
     const subtotal = unitPrice * (it.qty || 0);
+    
+    console.log('🔍 Debug - Renderizando item:', {
+      id: it.id,
+      descricao: p.descricao,
+      qty: it.qty,
+      unitPrice,
+      subtotal
+    });
     
     return `
       <div class="item-row readonly">
@@ -879,7 +889,12 @@ function renderItemsReadonly(){
     `;
   }).join("");
   
+  console.log('🔍 Debug - HTML gerado:', html.substring(0, 200) + '...');
+  
   itemsList.innerHTML = html;
+  
+  console.log('🔍 Debug - itemsList.innerHTML após inserção:', itemsList.innerHTML.substring(0, 200) + '...');
+  
   updateTotalsBoth();
 }
 
