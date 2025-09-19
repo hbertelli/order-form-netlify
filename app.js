@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const cfg = window.APP_CONFIG || {};
 const url = new URL(location.href);
 const token = url.searchParams.get("token");
+const schema = url.searchParams.get("schema") || "demo";
 
 const alertBox    = document.getElementById("alert");
 const itemsList   = document.getElementById("items-list");
@@ -262,7 +263,7 @@ if (!token) {
 }
 
 const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
-  db: { schema: "demo" }
+  db: { schema: schema }
 });
 
 let session = null;
@@ -370,6 +371,8 @@ async function saveChanges() {
   try {
     showAlert(''); // Limpar alertas
     
+    console.log('🔍 Salvando alterações no schema:', session?.schema || schema);
+    
     // Preparar updates em lote
     const updates = items.map(item => ({
       id: item.id,
@@ -419,7 +422,8 @@ async function submitOrder() {
         'Authorization': `Bearer ${cfg.SUPABASE_ANON}`
       },
       body: JSON.stringify({
-        session_id: session.id
+        session_id: session.id,
+        schema: session?.schema || schema
       })
     });
     
@@ -655,14 +659,14 @@ function updateActionBarsVisibility() {
 /* ---------- data ---------- */
 async function loadSession(){
   console.log('🔍 Tentando carregar sessão com token:', token);
+  console.log('🔍 Schema configurado:', schema);
   console.log('🔍 Configuração Supabase URL:', cfg.SUPABASE_URL);
-  console.log('🔍 Schema configurado: demo');
   console.log('🔍 Token é UUID válido:', /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token));
   
   // Busca a sessão específica usando o token como ID
   const { data, error } = await supabase
     .from("order_sessions")
-    .select("id, expires_at, used, created_at, customer_id, estimated_order_number")
+    .select("id, expires_at, used, created_at, customer_id, estimated_order_number, schema, view_name")
     .eq("id", token)
     .maybeSingle();
   
@@ -670,10 +674,11 @@ async function loadSession(){
     data, 
     error, 
     token,
+    schema,
     hasData: !!data,
     errorCode: error?.code,
     errorMessage: error?.message,
-    queryUsed: `SELECT id, expires_at, used, created_at, customer_id FROM order_sessions WHERE id = '${token}'`
+    queryUsed: `SELECT id, expires_at, used, created_at, customer_id, schema, view_name FROM order_sessions WHERE id = '${token}' (schema: ${schema})`
   });
   
   if (error) {
@@ -698,6 +703,17 @@ async function loadSession(){
   
   // Sempre definir session, mesmo se usada
   session = data;
+  
+  // Se a sessão tem um schema diferente do URL, atualizar o cliente Supabase
+  if (session.schema && session.schema !== schema) {
+    console.log('🔄 Atualizando schema do cliente Supabase:', session.schema);
+    // Recriar cliente com schema correto
+    window.supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
+      db: { schema: session.schema }
+    });
+    // Atualizar referência global
+    supabase = window.supabase;
+  }
   
   if (data.used) {
     showUsedSessionPage();

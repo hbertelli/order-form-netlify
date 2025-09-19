@@ -15,10 +15,21 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      db: { schema: 'demo' }
+      db: { schema: requestSchema }
     })
 
-    const { customer_id, cnpj } = await req.json()
+    const { customer_id, cnpj, schema, view_name } = await req.json()
+
+    // Validar parâmetros obrigatórios
+    const requestSchema = schema || 'demo'
+    const requestViewName = view_name || 'v_last_order_by_product_atacamax'
+
+    console.log('🔍 Debug - Parâmetros recebidos:', {
+      customer_id,
+      cnpj,
+      schema: requestSchema,
+      view_name: requestViewName
+    })
 
     // Detectar automaticamente se é CNPJ ou customer_id
     let actualCustomerId = customer_id
@@ -188,7 +199,7 @@ Deno.serve(async (req: Request) => {
 
     // Cliente existe, buscar produtos do último pedido na view
     const { data: lastOrderProducts, error: lastOrderError } = await supabase
-      .from('v_last_order_by_product_atacamax')
+      .from(requestViewName)
       .select('cod_cliente, codprodfilho, qtde')
       .eq('cod_cliente', customer.codpessoa)
 
@@ -200,7 +211,8 @@ Deno.serve(async (req: Request) => {
           message: 'Erro ao consultar último pedido',
           details: lastOrderError.message,
           customer_id: customer.codpessoa,
-          debug_query: 'v_last_order_by_product_atacamax'
+          debug_query: requestViewName,
+          schema: requestSchema
         }),
         {
           status: 200,
@@ -221,7 +233,9 @@ Deno.serve(async (req: Request) => {
           message: 'Nenhum pedido anterior encontrado',
           details: 'Não foram encontrados produtos no último pedido deste cliente',
           customer_id: customer.codpessoa,
-          customer_name: customer.nome
+          customer_name: customer.nome,
+          view_used: requestViewName,
+          schema: requestSchema
         }),
         {
           status: 200,
@@ -295,11 +309,13 @@ Deno.serve(async (req: Request) => {
         customer_id: customer.codpessoa,
         expires_at: expiresAt.toISOString(),
         used: false,
-        estimated_order_number: estimatedOrderNumber
+        estimated_order_number: estimatedOrderNumber,
+        schema: requestSchema,
+        view_name: requestViewName
       }
       )
       .select('codpessoa, nome, cpfcgc, nomefantazia, razaosocial, endereco, numero, bairro, cidade, uf, cep')
-      .select('id, customer_id, expires_at, used, created_at')
+      .select('id, customer_id, expires_at, used, created_at, schema, view_name')
       .single()
 
     if (sessionError) {
@@ -384,9 +400,11 @@ Deno.serve(async (req: Request) => {
           order_url: orderUrl,
           token: token,
           items_loaded: orderItems.length,
-          total_products_found: currentProducts.length
+          total_products_found: currentProducts.length,
+          schema: requestSchema,
+          view_name: requestViewName
         },
-        message: `Sessão criada com sucesso para ${customer.nome} com ${orderItems.length} itens do último pedido. Número estimado do pedido: ${estimatedOrderNumber || 'N/A'}`
+        message: `Sessão criada com sucesso para ${customer.nome} com ${orderItems.length} itens do último pedido (schema: ${requestSchema}, view: ${requestViewName}). Número estimado do pedido: ${estimatedOrderNumber || 'N/A'}`
       }),
       {
         status: 200,

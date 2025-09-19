@@ -28,9 +28,6 @@ Deno.serve(async (req: Request) => {
   try {
     console.log('🔍 Submit-order - Iniciando processamento')
     
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      db: { schema: 'demo' }
-    })
 
     // Extrair session_id do body da requisição
     let sessionId
@@ -72,9 +69,14 @@ Deno.serve(async (req: Request) => {
     console.log('🔍 Submit-order - Session ID recebido:', sessionId)
 
     // Verificar se a sessão existe e não foi usada
-    const { data: session, error: sessionError } = await supabase
+    // Primeiro, criar cliente Supabase com schema padrão para buscar a sessão
+    const supabaseDefault = createClient(supabaseUrl, supabaseServiceKey, {
+      db: { schema: 'demo' }
+    })
+    
+    const { data: session, error: sessionError } = await supabaseDefault
       .from('order_sessions')
-      .select('id, customer_id, expires_at, used, estimated_order_number')
+      .select('id, customer_id, expires_at, used, estimated_order_number, schema, view_name')
       .eq('id', sessionId)
       .single()
 
@@ -119,6 +121,14 @@ Deno.serve(async (req: Request) => {
         }
       )
     }
+
+    // Agora criar cliente Supabase com o schema correto da sessão
+    const requestSchema = session.schema || 'demo'
+    console.log('🔍 Submit-order - Schema da sessão:', requestSchema)
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      db: { schema: requestSchema }
+    })
 
     // Buscar itens da sessão
     const { data: orderItems, error: itemsError } = await supabase
@@ -305,7 +315,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Marcar sessão como usada
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseDefault
       .from('order_sessions')
       .update({ used: true })
       .eq('id', sessionId)
@@ -328,7 +338,8 @@ Deno.serve(async (req: Request) => {
       customerId: session.customer_id,
       customerName: customer.nome,
       totalItems: orderItems.length,
-      totalValue: totalPedido
+      totalValue: totalPedido,
+      schema: requestSchema
     })
 
     return new Response(
@@ -355,7 +366,8 @@ Deno.serve(async (req: Request) => {
           items: itensDetalhados,
           total_items: orderItems.length,
           total_value: totalPedido,
-          submitted_at: savedOrder.submitted_at
+          submitted_at: savedOrder.submitted_at,
+          schema: requestSchema
         }
       }),
       {
