@@ -14,15 +14,15 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      db: { schema: requestSchema }
-    })
-
     const { customer_id, cnpj, schema, view_name } = await req.json()
 
     // Validar parâmetros obrigatórios
     const requestSchema = schema || 'demo'
     const requestViewName = view_name || 'v_last_order_by_product_atacamax'
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      db: { schema: requestSchema }
+    })
 
     console.log('🔍 Debug - Parâmetros recebidos:', {
       customer_id,
