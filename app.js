@@ -741,13 +741,26 @@ async function loadSession(){
     .from("clientes_atacamax")
     .select("codpessoa, nome, cpfcgc, nomefantazia, logradouro, numero, bairro, cidade, uf, cep")
     .eq("codpessoa", session.customer_id)
-    .single();
+    .maybeSingle();
   
   console.log('🔍 Debug - Buscando cliente com ID:', session.customer_id);
   console.log('🔍 Debug - Resultado da consulta do cliente:', { customer, customerError });
   
   if (customerError) {
     console.error('Erro ao buscar dados do cliente:', customerError);
+    console.error('🔍 Debug - Schema usado:', schema);
+    console.error('🔍 Debug - Customer ID:', session.customer_id);
+    
+    // Tentar listar alguns clientes para debug
+    try {
+      const { data: sampleClients } = await currentSupabase
+        .from("clientes_atacamax")
+        .select("codpessoa, nome")
+        .limit(5);
+      console.log('🔍 Debug - Clientes de exemplo no schema:', sampleClients);
+    } catch (e) {
+      console.error('🔍 Debug - Erro ao buscar clientes de exemplo:', e);
+    }
   } else {
     customerData = customer;
     console.log('🔍 Debug - customerData definido:', customerData);
@@ -813,9 +826,31 @@ async function loadItems(){
       .from("produtos_atacamax")
       .select("codprodfilho, descricao, referencia, gtin, preco3, promo3, ativo")
       .in("codprodfilho", asNumbers);
+    
+    console.log('🔍 Debug - Query produtos:', {
+      schema: schema,
+      productIds: asNumbers,
+      found: data?.length || 0,
+      error: prodErr
+    });
+    
     if (prodErr) throw prodErr;
     
     console.log('🔍 Debug - Produtos encontrados neste lote:', data?.length || 0);
+    
+    // Se não encontrou produtos, tentar buscar alguns de exemplo
+    if (!data || data.length === 0) {
+      try {
+        const { data: sampleProducts } = await currentSupabase
+          .from("produtos_atacamax")
+          .select("codprodfilho, descricao")
+          .limit(5);
+        console.log('🔍 Debug - Produtos de exemplo no schema:', sampleProducts);
+      } catch (e) {
+        console.error('🔍 Debug - Erro ao buscar produtos de exemplo:', e);
+      }
+    }
+    
     prods = prods.concat(data || []);
   }
 
