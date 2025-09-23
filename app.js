@@ -362,9 +362,13 @@ async function handleProductSearch() {
       // Buscar por código E por nome
       const { data, error: searchError } = await currentSupabase
         .from('produtos_atacamax')
-        .select('codprodfilho, descricao, referencia, gtin, preco3, promo3, ativo')
+        .select('codprodfilho, descricao, referencia, gtin, preco3, promo3, ativo, grupo, subgrupo, estoque')
         .or(`descricao.ilike.%${query}%,codprodfilho.eq.${parseInt(query)}`)
         .eq('ativo', 'S')
+        .neq('grupo', 'INATIVO')
+        .neq('subgrupo', 'INATIVO')
+        .gte('estoque', 1)
+        .gt('preco3', 0)
         .limit(20);
       
       products = data;
@@ -373,9 +377,13 @@ async function handleProductSearch() {
       // Buscar apenas por nome (texto)
       const { data, error: searchError } = await currentSupabase
         .from('produtos_atacamax')
-        .select('codprodfilho, descricao, referencia, gtin, preco3, promo3, ativo')
+        .select('codprodfilho, descricao, referencia, gtin, preco3, promo3, ativo, grupo, subgrupo, estoque')
         .ilike('descricao', `%${query}%`)
         .eq('ativo', 'S')
+        .neq('grupo', 'INATIVO')
+        .neq('subgrupo', 'INATIVO')
+        .gte('estoque', 1)
+        .gt('preco3', 0)
         .limit(20);
       
       products = data;
