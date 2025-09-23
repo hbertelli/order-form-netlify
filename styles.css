@@ -1004,6 +1004,56 @@ footer {
   transform: none;
 }
 
+/* Mobile adjustments for floating bar buttons */
+@media (max-width: 480px) {
+  .buttons {
+    gap: var(--spacing-xs);
+  }
+  
+  .buttons button {
+    height: 40px;
+    padding: 0 var(--spacing-sm);
+    font-size: 12px;
+    min-width: 40px;
+  }
+  
+  /* Hide text on smaller buttons, show only icons */
+  .buttons #footer-add-product-btn .btn-text,
+  .buttons #footer-save-btn .btn-text {
+    display: none;
+  }
+  
+  /* Keep submit button text visible but shorter */
+  .buttons #footer-submit-btn {
+    padding: 0 var(--spacing);
+  }
+}
+
+@media (max-width: 360px) {
+  .actions-inner {
+    padding: var(--spacing-sm);
+  }
+  
+  .total {
+    font-size: 14px;
+  }
+  
+  .total strong {
+    font-size: 16px;
+  }
+  
+  .buttons button {
+    height: 36px;
+    padding: 0 var(--spacing-xs);
+    font-size: 11px;
+    min-width: 36px;
+  }
+  
+  .buttons #footer-submit-btn {
+    padding: 0 var(--spacing-sm);
+  }
+}
+
 /* Smooth transitions for action bars */
 .actions-bar {
   transition: all 0.3s ease;
