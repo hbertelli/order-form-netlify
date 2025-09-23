@@ -271,6 +271,9 @@ let customerData = null;
 let items   = [];
 let currentSupabase = supabase; // Cliente Supabase atual
 
+// Estado do modal de busca
+let searchResults = [];
+let isSearching = false;
 /* ---------- helpers ---------- */
 function chunk(arr, size){ const out=[]; for (let i=0;i<arr.length;i+=size) out.push(arr.slice(i, i+size)); return out; }
 function toDecimal(v){

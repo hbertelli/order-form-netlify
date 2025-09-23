@@ -23,6 +23,7 @@
     <section id="items-section" class="card">
       <div class="card-header">
         <h2>🛒 Itens do Pedido</h2>
+        <button id="add-product-btn" type="button" class="btn-add-product">➕ Adicionar Produto</button>
       </div>
       <div id="items-list"></div>
       <div class="empty" id="empty-hint" style="display:none;">
@@ -41,6 +42,27 @@
     </div>
    
   </main>
+
+  <!-- Modal de busca de produtos -->
+  <div id="product-search-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🔍 Buscar Produtos</h3>
+        <button id="close-modal-btn" class="btn-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="search-container">
+          <input type="text" id="product-search-input" placeholder="Digite o nome ou código do produto..." class="search-input">
+          <button id="search-btn" type="button" class="btn-search">🔍 Buscar</button>
+        </div>
+        <div id="search-results" class="search-results"></div>
+        <div id="search-loading" class="search-loading" style="display: none;">
+          <div class="loading-spinner">🔄</div>
+          <p>Buscando produtos...</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <footer>
     <small>🔒 Link pessoal e temporário. Não compartilhe.</small>
