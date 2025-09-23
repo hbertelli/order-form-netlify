@@ -375,7 +375,7 @@ Deno.serve(async (req: Request) => {
 
     // Usar o session_id diretamente como token
     const token = session.id
-    const orderUrl = `${req.headers.get('origin') || 'https://stellar-cranachan-2b11bb.netlify.app'}/?token=${token}`
+    const orderUrl = `${req.headers.get('origin') || 'https://stellar-cranachan-2b11bb.netlify.app'}/?token=${token}&schema=${requestSchema}`
     
     return new Response(
       JSON.stringify({

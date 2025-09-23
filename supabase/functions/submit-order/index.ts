@@ -28,6 +28,7 @@ Deno.serve(async (req: Request) => {
   try {
     console.log('🔍 Submit-order - Iniciando processamento')
     
+    let requestSchema = 'demo' // default
 
     // Extrair session_id do body da requisição
     let sessionId
@@ -35,7 +36,9 @@ Deno.serve(async (req: Request) => {
     try {
       const body = await req.json()
       sessionId = body.session_id
+      requestSchema = body.schema || 'demo'
       console.log('🔍 Submit-order - Session ID do body:', sessionId)
+      console.log('🔍 Submit-order - Schema do body:', requestSchema)
     } catch (error) {
       console.log('❌ Submit-order - Erro ao ler body:', error)
       return new Response(
@@ -67,16 +70,16 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log('🔍 Submit-order - Session ID recebido:', sessionId)
+    console.log('🔍 Submit-order - Schema recebido:', requestSchema)
 
-    // Verificar se a sessão existe e não foi usada
-    // Primeiro, criar cliente Supabase com schema padrão para buscar a sessão
-    const supabaseDefault = createClient(supabaseUrl, supabaseServiceKey, {
-      db: { schema: 'demo' }
+    // Criar cliente Supabase com o schema correto
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      db: { schema: requestSchema }
     })
     
-    const { data: session, error: sessionError } = await supabaseDefault
+    const { data: session, error: sessionError } = await supabase
       .from('order_sessions')
-      .select('id, customer_id, expires_at, used, estimated_order_number, schema, view_name')
+      .select('id, customer_id, expires_at, used, estimated_order_number, view_name')
       .eq('id', sessionId)
       .single()
 
@@ -121,14 +124,6 @@ Deno.serve(async (req: Request) => {
         }
       )
     }
-
-    // Agora criar cliente Supabase com o schema correto da sessão
-    const requestSchema = session.schema || 'demo'
-    console.log('🔍 Submit-order - Schema da sessão:', requestSchema)
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      db: { schema: requestSchema }
-    })
 
     // Buscar itens da sessão
     const { data: orderItems, error: itemsError } = await supabase
@@ -315,7 +310,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Marcar sessão como usada
-    const { error: updateError } = await supabaseDefault
+    const { error: updateError } = await supabase
       .from('order_sessions')
       .update({ used: true })
       .eq('id', sessionId)

@@ -423,7 +423,7 @@ async function submitOrder() {
       },
       body: JSON.stringify({
         session_id: session.id,
-        schema: session?.schema || schema
+        schema: schema
       })
     });
     
@@ -663,10 +663,15 @@ async function loadSession(){
   console.log('🔍 Configuração Supabase URL:', cfg.SUPABASE_URL);
   console.log('🔍 Token é UUID válido:', /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token));
   
-  // Busca a sessão específica usando o token como ID
-  const { data, error } = await supabase
+  // Criar cliente Supabase com o schema correto da URL
+  const supabaseForSession = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
+    db: { schema: schema }
+  });
+  
+  // Busca a sessão específica usando o token como ID no schema correto
+  const { data, error } = await supabaseForSession
     .from("order_sessions")
-    .select("id, expires_at, used, created_at, customer_id, estimated_order_number, schema, view_name")
+    .select("id, expires_at, used, created_at, customer_id, estimated_order_number, view_name")
     .eq("id", token)
     .maybeSingle();
   
@@ -678,7 +683,7 @@ async function loadSession(){
     hasData: !!data,
     errorCode: error?.code,
     errorMessage: error?.message,
-    queryUsed: `SELECT id, expires_at, used, created_at, customer_id, schema, view_name FROM order_sessions WHERE id = '${token}' (schema: ${schema})`
+    queryUsed: `SELECT id, expires_at, used, created_at, customer_id, view_name FROM order_sessions WHERE id = '${token}' (schema: ${schema})`
   });
   
   if (error) {
@@ -704,16 +709,10 @@ async function loadSession(){
   // Sempre definir session, mesmo se usada
   session = data;
   
-  // Se a sessão tem um schema diferente do URL, atualizar o cliente Supabase
-  if (session.schema && session.schema !== schema) {
-    console.log('🔄 Atualizando schema do cliente Supabase:', session.schema);
-    // Recriar cliente com schema correto
-    window.supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
-      db: { schema: session.schema }
-    });
-    // Atualizar referência global
-    supabase = window.supabase;
-  }
+  // Atualizar cliente global para usar o schema correto
+  console.log('🔄 Configurando cliente Supabase com schema:', schema);
+  window.supabase = supabaseForSession;
+  supabase = window.supabase;
   
   if (data.used) {
     showUsedSessionPage();
