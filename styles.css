@@ -1007,23 +1007,25 @@ footer {
 
 .buttons #footer-add-product-btn {
   background: var(--primary);
-  color: white;
+  color: white !important;
   border: 1px solid var(--primary);
 }
 
 .buttons #footer-add-product-btn:hover {
   background: var(--primary-hover);
+  color: white !important;
   transform: translateY(-1px);
 }
 
 .buttons #footer-submit-btn {
   background: linear-gradient(135deg, var(--success) 0%, #047857 100%);
-  color: white;
+  color: white !important;
   box-shadow: var(--shadow);
 }
 
 .buttons #footer-submit-btn:hover {
   background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  color: white !important;
   transform: translateY(-1px);
 }
 
