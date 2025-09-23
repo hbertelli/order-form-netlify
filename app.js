@@ -1288,11 +1288,13 @@ async function init() {
     const mainSubmitBtn = document.getElementById("main-submit-btn");
     const footerSaveBtn = document.getElementById("footer-save-btn");
     const footerSubmitBtn = document.getElementById("footer-submit-btn");
+    const footerAddProductBtn = document.getElementById("footer-add-product-btn");
     
     if (mainSaveBtn) mainSaveBtn.addEventListener('click', saveChanges);
     if (mainSubmitBtn) mainSubmitBtn.addEventListener('click', handleSubmit);
     if (footerSaveBtn) footerSaveBtn.addEventListener('click', saveChanges);
     if (footerSubmitBtn) footerSubmitBtn.addEventListener('click', handleSubmit);
+    if (footerAddProductBtn) footerAddProductBtn.addEventListener('click', showProductSearchModal);
     
     // Configurar event listeners para busca de produtos
     const addProductBtn = document.getElementById('add-product-btn');

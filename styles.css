@@ -976,6 +976,17 @@ footer {
   background: var(--gray-200);
 }
 
+.buttons #footer-add-product-btn {
+  background: var(--primary);
+  color: white;
+  border: 1px solid var(--primary);
+}
+
+.buttons #footer-add-product-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
 .buttons #footer-submit-btn {
   background: linear-gradient(135deg, var(--success) 0%, #047857 100%);
   color: white;
