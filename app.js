@@ -410,10 +410,13 @@ async function handleProductSearch() {
       return `
         <div class="product-result">
           <div class="product-info">
-            <div class="product-name">${product.descricao || 'Sem descrição'}</div>
+            <div class="product-name">
+              ${product.descricao || 'Sem descrição'}
+              ${hasPromotion ? '<span class="promo-badge">Promoção</span>' : ''}
+            </div>
             <div class="product-code">Código: ${product.codprodfilho}</div>
           </div>
-          <div class="product-price">${formatBRL(unitPrice)}</div>
+          ${priceHtml}
           <div class="product-actions">
             <div class="qty-selector">
               <label>Qtd:</label>
@@ -1019,6 +1022,23 @@ async function loadItems(){
     .eq("session_id", session.id)
     .order("id");
      
+      // Verificar se há promoção
+      const basePrice = toDecimal(product.preco3) || 0;
+      const promoPrice = toDecimal(product.promo3) || 0;
+      const hasPromotion = promoPrice > 0 && promoPrice < basePrice;
+      
+      let priceHtml;
+      if (hasPromotion) {
+        priceHtml = `
+          <div class="product-price promotion">
+            <span class="original-price">${formatBRL(basePrice)}</span>
+            <span class="promo-price">${formatBRL(promoPrice)}</span>
+          </div>
+        `;
+      } else {
+        priceHtml = `<div class="product-price">${formatBRL(unitPrice)}</div>`;
+      }
+      
   console.log('🔍 Debug - Query específica da sessão:', {
     sessionId: session.id,
     query: `SELECT id, session_id, product_id, qty FROM order_items WHERE session_id = '${session.id}' ORDER BY id`,
@@ -1122,13 +1142,33 @@ function renderItems(){
     const unitPrice = it.unit_price || 0;
     const subtotal = unitPrice * (it.qty || 0);
     
+    // Verificar se há promoção
+    const basePrice = toDecimal(p.preco3) || 0;
+    const promoPrice = toDecimal(p.promo3) || 0;
+    const hasPromotion = promoPrice > 0 && promoPrice < basePrice;
+    
+    let priceHtml;
+    if (hasPromotion) {
+      priceHtml = `
+        <div class="item-price promotion">
+          <span class="original-price">${formatBRL(basePrice)}</span>
+          <span class="promo-price">${formatBRL(promoPrice)}</span>
+        </div>
+      `;
+    } else {
+      priceHtml = `<div class="item-price">${formatBRL(unitPrice)}</div>`;
+    }
+    
     return `
       <div class="item-row" data-item-id="${it.id}">
         <div class="item-title-wrap">
-          <div class="item-title">${p.descricao || 'Sem descrição'}</div>
+          <div class="item-title">
+            ${p.descricao || 'Sem descrição'}
+            ${hasPromotion ? '<span class="promo-badge">Promoção</span>' : ''}
+          </div>
           <div class="item-meta">Código: ${p.codprodfilho}</div>
         </div>
-        <div class="item-price">${formatBRL(unitPrice)}</div>
+        ${priceHtml}
         <input type="number" class="qty-input" value="${it.qty || 1}" min="1" max="9999" data-item-id="${it.id}">
         <div class="item-subtotal">${formatBRL(subtotal)}</div>
         <button class="btn-remove" data-item-id="${it.id}">🗑️ Remover</button>
@@ -1172,6 +1212,23 @@ function renderItemsReadonly(){
     const unitPrice = it.unit_price || 0;
     const subtotal = unitPrice * (it.qty || 0);
     
+    // Verificar se há promoção
+    const basePrice = toDecimal(p.preco3) || 0;
+    const promoPrice = toDecimal(p.promo3) || 0;
+    const hasPromotion = promoPrice > 0 && promoPrice < basePrice;
+    
+    let priceHtml;
+    if (hasPromotion) {
+      priceHtml = `
+        <div class="item-price promotion">
+          <span class="original-price">${formatBRL(basePrice)}</span>
+          <span class="promo-price">${formatBRL(promoPrice)}</span>
+        </div>
+      `;
+    } else {
+      priceHtml = `<div class="item-price">${formatBRL(unitPrice)}</div>`;
+    }
+    
     console.log('🔍 Debug - Renderizando item:', {
       id: it.id,
       descricao: p.descricao,
@@ -1183,11 +1240,14 @@ function renderItemsReadonly(){
     return `
       <div class="item-row readonly">
         <div class="item-title-wrap">
-          <div class="item-title">${p.descricao || 'Sem descrição'}</div>
+          <div class="item-title">
+            ${p.descricao || 'Sem descrição'}
+            ${hasPromotion ? '<span class="promo-badge">Promoção</span>' : ''}
+          </div>
           <div class="item-meta">Código: ${p.codprodfilho}</div>
         </div>
         <div class="qty-display">${it.qty || 1}</div>
-        <div class="item-price">${formatBRL(unitPrice)}</div>
+        ${priceHtml}
         <div class="item-subtotal">${formatBRL(subtotal)}</div>
       </div>
     `;
