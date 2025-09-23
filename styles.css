@@ -502,15 +502,6 @@ main {
   font-size: 18px;
   color: #dc2626;
   font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.product-price .promo-price::before {
-  content: '🔥';
-  font-size: 14px;
-  animation: pulse 2s infinite;
 }
 
 /* Badge de promoção no modal de busca */
