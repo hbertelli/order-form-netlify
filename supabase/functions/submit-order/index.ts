@@ -298,7 +298,7 @@ Deno.serve(async (req: Request) => {
     console.log('📋 Número do pedido:', savedOrder.order_number)
 
     // Gerar link de consulta do pedido
-    const orderViewUrl = `${req.headers.get('origin') || 'https://stellar-cranachan-2b11bb.netlify.app'}/?token=${sessionId}`
+    const orderViewUrl = `${req.headers.get('origin') || 'https://stellar-cranachan-2b11bb.netlify.app'}/?token=${sessionId}&schema=${requestSchema}`
 
     // Enviar email de notificação
     try {
