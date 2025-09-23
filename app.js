@@ -1020,24 +1020,6 @@ async function loadItems(){
     .from("order_items")
     .select("id, session_id, product_id, qty")
     .eq("session_id", session.id)
-    .order("id");
-     
-      // Verificar se há promoção
-      const basePrice = toDecimal(product.preco3) || 0;
-      const promoPrice = toDecimal(product.promo3) || 0;
-      const hasPromotion = promoPrice > 0 && promoPrice < basePrice;
-      
-      let priceHtml;
-      if (hasPromotion) {
-        priceHtml = `
-          <div class="product-price promotion">
-            <span class="original-price">${formatBRL(basePrice)}</span>
-            <span class="promo-price">${formatBRL(promoPrice)}</span>
-          </div>
-        `;
-      } else {
-        priceHtml = `<div class="product-price">${formatBRL(unitPrice)}</div>`;
-      }
       
   console.log('🔍 Debug - Query específica da sessão:', {
     sessionId: session.id,
