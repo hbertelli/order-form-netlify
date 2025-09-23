@@ -404,8 +404,27 @@ async function handleProductSearch() {
     // Renderizar resultados
     const html = products.map(product => {
       const unitPrice = computeUnitPrice(product) || 0;
+      
+      // Verificar se há promoção
+      const basePrice = toDecimal(product.preco3) || 0;
+      const promoPrice = toDecimal(product.promo3) || 0;
+      const hasPromotion = promoPrice > 0 && promoPrice < basePrice;
+      
       const existingItem = items.find(item => item.product_id == product.codprodfilho);
       const buttonText = existingItem ? '➕ Somar' : '✅ Adicionar';
+      
+      // Gerar HTML do preço com promoção
+      let priceHtml;
+      if (hasPromotion) {
+        priceHtml = `
+          <div class="product-price promotion">
+            <span class="original-price">${formatBRL(basePrice)}</span>
+            <span class="promo-price">🔥 ${formatBRL(promoPrice)}</span>
+          </div>
+        `;
+      } else {
+        priceHtml = `<div class="product-price">${formatBRL(unitPrice)}</div>`;
+      }
       
       return `
         <div class="product-result">
