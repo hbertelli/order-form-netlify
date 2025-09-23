@@ -905,6 +905,7 @@ main {
 #main-add-product-btn:hover {
   background: var(--primary-hover);
   transform: translateY(-1px);
+  color: white;
 }
 
 #main-save-btn, #footer-save-btn {
@@ -928,6 +929,7 @@ main {
   background: linear-gradient(135deg, #047857 0%, #065f46 100%);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
+  color: white;
 }
 
 #main-submit-btn:disabled, #footer-submit-btn:disabled {
