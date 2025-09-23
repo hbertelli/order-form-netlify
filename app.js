@@ -1295,6 +1295,7 @@ async function init() {
     if (footerSaveBtn) footerSaveBtn.addEventListener('click', saveChanges);
     if (footerSubmitBtn) footerSubmitBtn.addEventListener('click', handleSubmit);
     if (footerAddProductBtn) footerAddProductBtn.addEventListener('click', showProductSearchModal);
+    if (footerAddProductBtn) footerAddProductBtn.addEventListener('click', showProductSearchModal);
     
     // Configurar event listeners para busca de produtos
     const addProductBtn = document.getElementById('add-product-btn');
