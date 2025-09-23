@@ -894,18 +894,19 @@ main {
   transition: all 0.2s ease;
   white-space: nowrap;
   min-width: 100px;
+  color: inherit;
 }
 
 #main-add-product-btn {
   background: var(--primary);
-  color: white;
+  color: white !important;
   border: 1px solid var(--primary);
 }
 
 #main-add-product-btn:hover {
   background: var(--primary-hover);
   transform: translateY(-1px);
-  color: white;
+  color: white !important;
 }
 
 #main-save-btn, #footer-save-btn {
@@ -921,7 +922,7 @@ main {
 
 #main-submit-btn, #footer-submit-btn {
   background: linear-gradient(135deg, var(--success) 0%, #047857 100%);
-  color: white;
+  color: white !important;
   box-shadow: var(--shadow);
 }
 
@@ -929,7 +930,7 @@ main {
   background: linear-gradient(135deg, #047857 0%, #065f46 100%);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
-  color: white;
+  color: white !important;
 }
 
 #main-submit-btn:disabled, #footer-submit-btn:disabled {
