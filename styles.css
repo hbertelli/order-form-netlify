@@ -875,7 +875,7 @@ main {
 .actions span {
   font-size: 18px;
   font-weight: 600;
-  color: white;
+  /* color: white; */
 }
 
 .actions strong {
