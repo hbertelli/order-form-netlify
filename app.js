@@ -309,6 +309,195 @@ function updateTotalsBoth(){
 }
 
 /* ---------- event handlers ---------- */
+// Funções do modal de busca de produtos
+function showProductSearchModal() {
+  const modal = document.getElementById('product-search-modal');
+  const searchInput = document.getElementById('product-search-input');
+  const searchResults = document.getElementById('search-results');
+  
+  if (modal) {
+    modal.style.display = 'flex';
+    searchResults.innerHTML = '';
+    if (searchInput) {
+      searchInput.value = '';
+      searchInput.focus();
+    }
+  }
+}
+
+function hideProductSearchModal() {
+  const modal = document.getElementById('product-search-modal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+async function handleProductSearch() {
+  const searchInput = document.getElementById('product-search-input');
+  const searchResults = document.getElementById('search-results');
+  const searchLoading = document.getElementById('search-loading');
+  
+  if (!searchInput || !searchResults || !searchLoading) return;
+  
+  const query = searchInput.value.trim();
+  
+  if (query.length < 2) {
+    searchResults.innerHTML = '<div class="search-empty"><div class="search-empty-icon">🔍</div><p>Digite pelo menos 2 caracteres para buscar</p></div>';
+    return;
+  }
+  
+  if (isSearching) return;
+  
+  try {
+    isSearching = true;
+    searchLoading.style.display = 'block';
+    searchResults.innerHTML = '';
+    
+    // Buscar produtos por nome ou código
+    const { data: products, error } = await currentSupabase
+      .from('produtos_atacamax')
+      .select('codprodfilho, descricao, referencia, gtin, preco3, promo3, ativo')
+      .or(`descricao.ilike.%${query}%,codprodfilho.eq.${query}`)
+      .eq('ativo', 'S')
+      .limit(20);
+    
+    if (error) throw error;
+    
+    searchLoading.style.display = 'none';
+    
+    if (!products || products.length === 0) {
+      searchResults.innerHTML = '<div class="search-empty"><div class="search-empty-icon">📦</div><p>Nenhum produto encontrado</p><small>Tente buscar por outro termo</small></div>';
+      return;
+    }
+    
+    // Renderizar resultados
+    const html = products.map(product => {
+      const unitPrice = computeUnitPrice(product) || 0;
+      const existingItem = items.find(item => item.product_id == product.codprodfilho);
+      const buttonText = existingItem ? '➕ Somar' : '✅ Adicionar';
+      
+      return `
+        <div class="product-result">
+          <div class="product-info">
+            <div class="product-name">${product.descricao || 'Sem descrição'}</div>
+            <div class="product-code">Código: ${product.codprodfilho}</div>
+          </div>
+          <div class="product-price">${formatBRL(unitPrice)}</div>
+          <div class="product-actions">
+            <div class="qty-selector">
+              <label>Qtd:</label>
+              <input type="number" value="1" min="1" max="9999" id="qty-${product.codprodfilho}">
+            </div>
+            <button class="btn-add-to-order" onclick="addProductToOrder(${product.codprodfilho}, '${product.descricao?.replace(/'/g, "\\'")}', ${unitPrice})">
+              ${buttonText}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    searchResults.innerHTML = html;
+    
+  } catch (error) {
+    console.error('Erro na busca de produtos:', error);
+    searchLoading.style.display = 'none';
+    searchResults.innerHTML = '<div class="search-empty"><div class="search-empty-icon">❌</div><p>Erro na busca</p><small>' + error.message + '</small></div>';
+  } finally {
+    isSearching = false;
+  }
+}
+
+async function addProductToOrder(productId, productName, unitPrice) {
+  try {
+    const qtyInput = document.getElementById(`qty-${productId}`);
+    const qty = parseInt(qtyInput?.value || '1');
+    
+    if (qty <= 0) {
+      alert('Quantidade deve ser maior que zero');
+      return;
+    }
+    
+    // Verificar se o produto já existe no pedido
+    const existingItem = items.find(item => item.product_id == productId);
+    
+    if (existingItem) {
+      // Somar à quantidade existente
+      const newQty = existingItem.qty + qty;
+      
+      const { error } = await currentSupabase
+        .from('order_items')
+        .update({ qty: newQty })
+        .eq('id', existingItem.id);
+      
+      if (error) throw error;
+      
+      existingItem.qty = newQty;
+      
+      // Feedback visual
+      const button = document.querySelector(`button[onclick*="${productId}"]`);
+      if (button) {
+        const originalText = button.textContent;
+        button.textContent = '✅ Adicionado!';
+        button.disabled = true;
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.disabled = false;
+        }, 1500);
+      }
+      
+    } else {
+      // Adicionar novo item
+      const { data: newItem, error } = await currentSupabase
+        .from('order_items')
+        .insert({
+          session_id: session.id,
+          product_id: productId,
+          qty: qty
+        })
+        .select('id, session_id, product_id, qty')
+        .single();
+      
+      if (error) throw error;
+      
+      // Adicionar à lista local
+      const produto = {
+        codprodfilho: productId,
+        descricao: productName,
+        preco3: unitPrice,
+        promo3: 0
+      };
+      
+      items.push({
+        ...newItem,
+        produto: produto,
+        unit_price: unitPrice
+      });
+      
+      // Feedback visual
+      const button = document.querySelector(`button[onclick*="${productId}"]`);
+      if (button) {
+        const originalText = button.textContent;
+        button.textContent = '✅ Adicionado!';
+        button.disabled = true;
+        setTimeout(() => {
+          button.textContent = '➕ Somar';
+          button.disabled = false;
+        }, 1500);
+      }
+    }
+    
+    // Re-renderizar lista de itens
+    renderItems();
+    
+    // Resetar quantidade no modal
+    if (qtyInput) qtyInput.value = '1';
+    
+  } catch (error) {
+    console.error('Erro ao adicionar produto:', error);
+    alert('Erro ao adicionar produto: ' + error.message);
+  }
+}
+
 async function handleQtyChange(event) {
   const input = event.target;
   const itemId = parseInt(input.dataset.itemId);
