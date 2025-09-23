@@ -167,7 +167,7 @@ window.showReadonlyOrder = async function() {
     // Recarregar os dados para visualização
     // Primeiro carregar dados do cliente se não estiverem disponíveis
     if (!customerData && session && session.customer_id) {
-      const { data: customer, error: customerError } = await supabase
+      const { data: customer, error: customerError } = await currentSupabase
         .from("clientes_atacamax")
         .select("codpessoa, nome, cpfcgc, nomefantazia, logradouro, numero, bairro, cidade, uf, cep")
         .eq("codpessoa", session.customer_id)
@@ -269,6 +269,7 @@ const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
 let session = null;
 let customerData = null;
 let items   = [];
+let currentSupabase = supabase; // Cliente Supabase atual
 
 /* ---------- helpers ---------- */
 function chunk(arr, size){ const out=[]; for (let i=0;i<arr.length;i+=size) out.push(arr.slice(i, i+size)); return out; }
@@ -346,7 +347,7 @@ async function handleRemoveItem(event) {
   
   try {
     // Remover do banco de dados
-    const { error } = await supabase
+    const { error } = await currentSupabase
       .from('order_items')
       .delete()
       .eq('id', itemId);
@@ -381,7 +382,7 @@ async function saveChanges() {
     
     // Atualizar no banco
     for (const update of updates) {
-      const { error } = await supabase
+      const { error } = await currentSupabase
         .from('order_items')
         .update({ qty: update.qty })
         .eq('id', update.id);
@@ -711,8 +712,7 @@ async function loadSession(){
   
   // Atualizar cliente global para usar o schema correto
   console.log('🔄 Configurando cliente Supabase com schema:', schema);
-  window.supabase = supabaseForSession;
-  supabase = window.supabase;
+  currentSupabase = supabaseForSession;
   
   if (data.used) {
     showUsedSessionPage();
@@ -737,7 +737,7 @@ async function loadSession(){
   }
   
   // Buscar dados completos do cliente
-  const { data: customer, error: customerError } = await supabase
+  const { data: customer, error: customerError } = await currentSupabase
     .from("clientes_atacamax")
     .select("codpessoa, nome, cpfcgc, nomefantazia, logradouro, numero, bairro, cidade, uf, cep")
     .eq("codpessoa", session.customer_id)
@@ -764,7 +764,7 @@ async function loadItems(){
   console.log('🔍 Debug - Schema configurado:', supabase.supabaseUrl, supabase.supabaseKey?.substring(0, 20) + '...');
   
   // Primeiro, vamos verificar se a tabela existe e tem dados
-  const { data: allItems, error: allError } = await supabase
+  const { data: allItems, error: allError } = await currentSupabase
     .from("order_items")
     .select("*")
     .limit(5);
@@ -775,7 +775,7 @@ async function loadItems(){
     sample: allItems?.[0] 
   });
   
-  const { data: rawItems, error } = await supabase
+  const { data: rawItems, error } = await currentSupabase
     .from("order_items")
     .select("id, session_id, product_id, qty")
     .eq("session_id", session.id)
@@ -809,7 +809,7 @@ async function loadItems(){
     const asNumbers = part.map(s => Number(s)).filter(n => Number.isFinite(n));
     console.log('🔍 Debug - Buscando produtos com IDs:', asNumbers);
     
-    const { data, error: prodErr } = await supabase
+    const { data, error: prodErr } = await currentSupabase
       .from("produtos_atacamax")
       .select("codprodfilho, descricao, referencia, gtin, preco3, promo3, ativo")
       .in("codprodfilho", asNumbers);
