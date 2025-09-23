@@ -483,6 +483,51 @@ main {
   align-self: center;
 }
 
+/* Estilos para promoção no modal de busca */
+.product-price.promotion {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.product-price .original-price {
+  font-size: 12px;
+  color: var(--gray-400);
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+.product-price .promo-price {
+  font-size: 18px;
+  color: #dc2626;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.product-price .promo-price::before {
+  content: '🔥';
+  font-size: 14px;
+  animation: pulse 2s infinite;
+}
+
+/* Badge de promoção no modal de busca */
+.product-name .promo-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+}
+
 .product-actions {
   grid-area: actions;
   display: flex;
