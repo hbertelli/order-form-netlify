@@ -247,6 +247,24 @@ main {
   .item-row {
     padding: var(--spacing-md);
   }
+  
+  .actions {
+    flex-direction: column;
+    gap: var(--spacing);
+  }
+  
+  .actions > div {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: center;
+  }
+  
+  .actions button {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    padding: 0 var(--spacing);
+  }
 }
 
 /* Alert */
@@ -867,15 +885,15 @@ main {
 
 .actions button {
   height: 48px;
-  padding: 0 var(--spacing-xl);
+  padding: 0 var(--spacing-lg);
   border: none;
   border-radius: var(--radius);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
+  white-space: nowrap;
+  min-width: 100px;
 }
 
 #main-add-product-btn {
