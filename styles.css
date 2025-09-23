@@ -878,6 +878,17 @@ main {
   letter-spacing: 0.025em;
 }
 
+#main-add-product-btn {
+  background: var(--primary);
+  color: white;
+  border: 1px solid var(--primary);
+}
+
+#main-add-product-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
 #main-save-btn, #footer-save-btn {
   background: var(--gray-100);
   color: var(--gray-700);

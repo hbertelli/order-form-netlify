@@ -1286,12 +1286,14 @@ async function init() {
     // Configurar event listeners para os botões principais
     const mainSaveBtn = document.getElementById("main-save-btn");
     const mainSubmitBtn = document.getElementById("main-submit-btn");
+    const mainAddProductBtn = document.getElementById("main-add-product-btn");
     const footerSaveBtn = document.getElementById("footer-save-btn");
     const footerSubmitBtn = document.getElementById("footer-submit-btn");
     const footerAddProductBtn = document.getElementById("footer-add-product-btn");
     
     if (mainSaveBtn) mainSaveBtn.addEventListener('click', saveChanges);
     if (mainSubmitBtn) mainSubmitBtn.addEventListener('click', handleSubmit);
+    if (mainAddProductBtn) mainAddProductBtn.addEventListener('click', showProductSearchModal);
     if (footerSaveBtn) footerSaveBtn.addEventListener('click', saveChanges);
     if (footerSubmitBtn) footerSubmitBtn.addEventListener('click', handleSubmit);
     if (footerAddProductBtn) footerAddProductBtn.addEventListener('click', showProductSearchModal);
