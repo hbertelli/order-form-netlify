@@ -353,13 +353,34 @@ async function handleProductSearch() {
     searchLoading.style.display = 'block';
     searchResults.innerHTML = '';
     
-    // Buscar produtos por nome ou código
-    const { data: products, error } = await currentSupabase
-      .from('produtos_atacamax')
-      .select('codprodfilho, descricao, referencia, gtin, preco3, promo3, ativo')
-      .or(`descricao.ilike.%${query}%,codprodfilho.eq.${query}`)
-      .eq('ativo', 'S')
-      .limit(20);
+    // Verificar se a query é numérica para buscar por código
+    const isNumeric = /^\d+$/.test(query);
+    
+    let products, error;
+    
+    if (isNumeric) {
+      // Buscar por código E por nome
+      const { data, error: searchError } = await currentSupabase
+        .from('produtos_atacamax')
+        .select('codprodfilho, descricao, referencia, gtin, preco3, promo3, ativo')
+        .or(`descricao.ilike.%${query}%,codprodfilho.eq.${parseInt(query)}`)
+        .eq('ativo', 'S')
+        .limit(20);
+      
+      products = data;
+      error = searchError;
+    } else {
+      // Buscar apenas por nome (texto)
+      const { data, error: searchError } = await currentSupabase
+        .from('produtos_atacamax')
+        .select('codprodfilho, descricao, referencia, gtin, preco3, promo3, ativo')
+        .ilike('descricao', `%${query}%`)
+        .eq('ativo', 'S')
+        .limit(20);
+      
+      products = data;
+      error = searchError;
+    }
     
     if (error) throw error;
     
