@@ -1047,7 +1047,9 @@ footer {
   }
   
   .actions #main-submit-btn {
-    padding: 0 var(--spacing);
+    padding: 0 var(--spacing-md);
+    font-size: 13px;
+    height: 44px;
   }
   
   .buttons {
