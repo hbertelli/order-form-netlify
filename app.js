@@ -519,6 +519,8 @@ async function addProductToOrder(productId, productName, unitPrice) {
   }
 }
 
+// Tornar a função disponível globalmente para uso no onclick
+window.addProductToOrder = addProductToOrder;
 async function handleQtyChange(event) {
   const input = event.target;
   const itemId = parseInt(input.dataset.itemId);
