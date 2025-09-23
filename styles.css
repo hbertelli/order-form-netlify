@@ -1035,6 +1035,21 @@ footer {
 
 /* Mobile adjustments for floating bar buttons */
 @media (max-width: 480px) {
+  /* Hide text on main action buttons except submit */
+  .actions #main-add-product-btn .btn-text,
+  .actions #main-save-btn .btn-text {
+    display: none;
+  }
+  
+  .actions button {
+    min-width: 44px;
+    padding: 0 var(--spacing-sm);
+  }
+  
+  .actions #main-submit-btn {
+    padding: 0 var(--spacing);
+  }
+  
   .buttons {
     gap: var(--spacing-xs);
   }
