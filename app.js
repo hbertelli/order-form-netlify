@@ -1011,6 +1011,35 @@ async function init() {
     if (footerSaveBtn) footerSaveBtn.addEventListener('click', saveChanges);
     if (footerSubmitBtn) footerSubmitBtn.addEventListener('click', handleSubmit);
     
+    // Configurar event listeners para busca de produtos
+    const addProductBtn = document.getElementById('add-product-btn');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const searchBtn = document.getElementById('search-btn');
+    const searchInput = document.getElementById('product-search-input');
+    
+    if (addProductBtn) addProductBtn.addEventListener('click', showProductSearchModal);
+    if (closeModalBtn) closeModalBtn.addEventListener('click', hideProductSearchModal);
+    if (searchBtn) searchBtn.addEventListener('click', handleProductSearch);
+    
+    // Buscar ao pressionar Enter no campo de busca
+    if (searchInput) {
+      searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          handleProductSearch();
+        }
+      });
+    }
+    
+    // Fechar modal ao clicar fora dele
+    const modal = document.getElementById('product-search-modal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          hideProductSearchModal();
+        }
+      });
+    }
+    
     // Configurar controle de visibilidade das barras de ação
     window.addEventListener('scroll', updateActionBarsVisibility);
     window.addEventListener('resize', updateActionBarsVisibility);
