@@ -1048,15 +1048,16 @@ footer {
   
   .actions button {
     min-width: 44px;
-    padding: 0 var(--spacing-sm);
+    padding: 0 var(--spacing);
+    height: 52px;
   }
   
   .actions #main-submit-btn {
-    padding: 0 4px;
-    font-size: 14px;
-    height: 48px;
+    padding: 0 var(--spacing-sm);
+    font-size: 15px;
+    height: 52px;
     color: white;
-    min-width: 70px;
+    min-width: 90px;
   }
   
   .buttons {
