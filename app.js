@@ -235,8 +235,7 @@ window.showReadonlyOrder = async function() {
     // Aguardar um pouco para garantir que o DOM foi atualizado
     setTimeout(() => {
       // Verificar se o elemento existe antes de renderizar
-      const itemsListElement = document.getElementById('items-list');
-      console.log('🔍 Debug - Elemento items-list encontrado:', !!itemsListElement);
+      const itemsListElement = document.getElementById('items-list');      
       if (itemsListElement) {
         renderItemsReadonly();
       } else {
@@ -619,8 +618,6 @@ async function saveChanges() {
   try {
     showAlert(''); // Limpar alertas
     
-    console.log('🔍 Salvando alterações no schema:', session?.schema || schema);
-    
     // Preparar updates em lote
     const updates = items.map(item => ({
       id: item.id,
@@ -693,8 +690,7 @@ async function submitOrder() {
 }
 
 function updateCustomerHeader() {
-  console.log('🔍 Debug - updateCustomerHeader chamado com:', customerData);
-  
+    
   if (!customerData) return;
   
   const customerInfoDiv = document.getElementById('customer-info');
@@ -907,9 +903,6 @@ function updateActionBarsVisibility() {
 /* ---------- data ---------- */
 async function loadSession(){
   console.log('🔍 Tentando carregar sessão com token:', token);
-  console.log('🔍 Schema configurado:', schema);
-  console.log('🔍 Configuração Supabase URL:', cfg.SUPABASE_URL);
-  console.log('🔍 Token é UUID válido:', /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token));
   
   // Criar cliente Supabase com o schema correto da URL
   const supabaseForSession = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON, {
@@ -922,17 +915,6 @@ async function loadSession(){
     .select("id, expires_at, used, created_at, customer_id, estimated_order_number, view_name")
     .eq("id", token)
     .maybeSingle();
-  
-  console.log('📊 Resultado da consulta:', { 
-    data, 
-    error, 
-    token,
-    schema,
-    hasData: !!data,
-    errorCode: error?.code,
-    errorMessage: error?.message,
-    queryUsed: `SELECT id, expires_at, used, created_at, customer_id, view_name FROM order_sessions WHERE id = '${token}' (schema: ${schema})`
-  });
   
   if (error) {
     console.error('Erro na consulta:', error);
@@ -958,7 +940,7 @@ async function loadSession(){
   session = data;
   
   // Atualizar cliente global para usar o schema correto
-  console.log('🔄 Configurando cliente Supabase com schema:', schema);
+  
   currentSupabase = supabaseForSession;
   
   if (data.used) {
@@ -1021,7 +1003,6 @@ async function loadSession(){
 async function loadItems(){
   // 1) buscar itens da sessão atual
   console.log('🔍 Debug - Iniciando loadItems para session:', session.id);
-  console.log('🔍 Debug - Schema configurado:', supabase.supabaseUrl, supabase.supabaseKey?.substring(0, 20) + '...');
   
   // Primeiro, vamos verificar se a tabela existe e tem dados
   const { data: allItems, error: allError } = await currentSupabase
@@ -1040,13 +1021,6 @@ async function loadItems(){
     .select("id, session_id, product_id, qty")
     .eq("session_id", session.id)
       
-  console.log('🔍 Debug - Query específica da sessão:', {
-    sessionId: session.id,
-    query: `SELECT id, session_id, product_id, qty FROM order_items WHERE session_id = '${session.id}' ORDER BY id`,
-    rawItems: rawItems?.length || 0,
-    error: error
-  });
-  
   if (error) throw error;
 
   console.log('🔍 Debug - Items encontrados:', rawItems?.length || 0);
@@ -1108,13 +1082,7 @@ async function loadItems(){
   items = arr.map(it => {
     const p = byId.get(String(it.product_id)) || null;
     const unit_price = computeUnitPrice(p);
-    console.log('🔍 Debug - Item mapeado:', { 
-      id: it.id, 
-      product_id: it.product_id, 
-      qty: it.qty, 
-      produto_encontrado: !!p,
-      unit_price 
-    });
+
     return { ...it, produto: p, unit_price };
   });
 
