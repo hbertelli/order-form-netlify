@@ -769,7 +769,13 @@ async function addProductToOrder(productId, qty = 1) {
 
 function handleQtyChange(itemId, newQty) {
   const qty = Math.max(1, parseInt(newQty) || 1);
-  updateItemQty(itemId, qty);
+  updateItemQty(itemId, qty).then(() => {
+    // Atualizar totais após mudança de quantidade
+    updateTotalsBoth();
+  }).catch(error => {
+    console.error('Erro ao atualizar quantidade:', error);
+    showAlert('Erro ao atualizar quantidade: ' + error.message);
+  });
 }
 
 async function updateItemQty(itemId, newQty) {
@@ -788,12 +794,29 @@ async function updateItemQty(itemId, newQty) {
       item.qty = newQty;
     }
     
+    // Renderizar novamente para atualizar subtotais
+    renderItems();
     updateTotalsBoth();
     console.log('✅ Quantidade atualizada:', { itemId, newQty });
     
   } catch (error) {
     console.error('Erro ao atualizar quantidade:', error);
-    showAlert('Erro ao atualizar quantidade: ' + error.message);
+    throw error; // Re-throw para ser tratado pelo handleQtyChange
+  }
+}
+
+// Função wrapper para remover item com confirmação
+async function handleRemoveItem(itemId) {
+  try {
+    const item = items.find(it => it.id === itemId);
+    const productName = item ? item.descricao : 'este produto';
+    
+    if (confirm(`Tem certeza que deseja remover "${productName}" do orçamento?`)) {
+      await removeItem(itemId);
+    }
+  } catch (error) {
+    console.error('Erro ao remover item:', error);
+    showAlert('Erro ao remover item: ' + error.message);
   }
 }
 
@@ -816,21 +839,74 @@ async function removeItem(itemId) {
     
   } catch (error) {
     console.error('Erro ao remover item:', error);
-    showAlert('Erro ao remover item: ' + error.message);
+    throw error; // Re-throw para ser tratado pelo handleRemoveItem
   }
 }
 
 async function saveChanges() {
   try {
+    showAlert(''); // Limpar alertas anteriores
     console.log('💾 Salvando alterações...');
     
-    // As alterações já são salvas automaticamente quando feitas
-    // Esta função pode ser usada para validações adicionais se necessário
+    // Validar se há itens no orçamento
+    if (!items || items.length === 0) {
+      showAlert('Adicione pelo menos um item ao orçamento antes de salvar.');
+      return;
+    }
     
-    console.log('✅ Alterações salvas com sucesso');
+    // Mostrar feedback visual
+    const saveBtns = [
+      document.getElementById('main-save-btn'),
+      document.getElementById('footer-save-btn')
+    ];
+    
+    saveBtns.forEach(btn => {
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = btn.textContent.replace('💾', '⏳').replace('Salvar', 'Salvando...');
+      }
+    });
+    
+    // Simular um pequeno delay para feedback visual
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Restaurar botões
+    saveBtns.forEach(btn => {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = btn.textContent.replace('⏳', '💾').replace('Salvando...', 'Salvar');
+      }
+    });
+    
+    showAlert(''); // Limpar alertas
+    console.log('✅ Alterações salvas automaticamente');
+    
+    // Mostrar mensagem de sucesso temporária
+    const tempAlert = document.createElement('div');
+    tempAlert.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--success);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      z-index: 3000;
+      box-shadow: var(--shadow-lg);
+    `;
+    tempAlert.textContent = '✅ Alterações salvas com sucesso!';
+    document.body.appendChild(tempAlert);
+    
+    setTimeout(() => {
+      if (tempAlert.parentNode) {
+        tempAlert.parentNode.removeChild(tempAlert);
+      }
+    }, 2000);
     
   } catch (error) {
     console.error('Erro ao salvar:', error);
+    showAlert('Erro ao salvar alterações: ' + error.message);
     throw error;
   }
 }
@@ -1087,7 +1163,7 @@ function renderItems() {
         <div class="item-subtotal">R$ ${subtotal.toFixed(2).replace('.', ',')}</div>
         <button 
           class="btn-remove" 
-          onclick="removeItem('${item.id}')"
+          onclick="handleRemoveItem('${item.id}')"
         >🗑️ Remover</button>
       </div>
     `;
@@ -1363,6 +1439,9 @@ async function init() {
     
     // Configurar event listeners
     
+    // Configurar scroll para barra flutuante
+    setupFloatingBar();
+    
     // Botões de adicionar produto
     const addProductBtns = [
       document.getElementById('add-product-btn'),
@@ -1384,7 +1463,13 @@ async function init() {
     
     saveBtns.forEach(btn => {
       if (btn) {
-        btn.addEventListener('click', saveChanges);
+        btn.addEventListener('click', async () => {
+          try {
+            await saveChanges();
+          } catch (error) {
+            console.error('Erro ao salvar:', error);
+          }
+        });
       }
     });
     
@@ -1485,6 +1570,50 @@ async function init() {
       "⚠️"
     );
   }
+}
+
+// Configurar comportamento da barra flutuante
+function setupFloatingBar() {
+  const actionsBar = document.getElementById('actions-bar');
+  const mainActions = document.querySelector('.actions');
+  
+  if (!actionsBar || !mainActions) return;
+  
+  let isFloatingBarVisible = false;
+  
+  function updateFloatingBar() {
+    const mainActionsRect = mainActions.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    
+    // Mostrar barra flutuante quando a seção de ações principais não estiver visível
+    const shouldShow = mainActionsRect.top > windowHeight || mainActionsRect.bottom < 0;
+    
+    if (shouldShow && !isFloatingBarVisible) {
+      actionsBar.classList.remove('hidden');
+      isFloatingBarVisible = true;
+    } else if (!shouldShow && isFloatingBarVisible) {
+      actionsBar.classList.add('hidden');
+      isFloatingBarVisible = false;
+    }
+  }
+  
+  // Configurar listener de scroll
+  let ticking = false;
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        updateFloatingBar();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+  
+  window.addEventListener('scroll', onScroll);
+  window.addEventListener('resize', updateFloatingBar);
+  
+  // Verificação inicial
+  updateFloatingBar();
 }
 
 // Inicializar quando o DOM estiver pronto

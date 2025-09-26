@@ -1130,12 +1130,13 @@ footer {
 
 /* Smooth transitions for action bars */
 .actions-bar {
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .actions-bar.hidden {
   transform: translateY(100%);
   opacity: 0;
+  pointer-events: none;
 }
 
 /* Responsive design */
