@@ -642,8 +642,8 @@ async function handleProductSearch() {
         product.descricao;
       
       return `
-        <div class="product-result" data-product-id="${product.codprodfilho}">
-          <div class="product-info">
+      return `
+        <div class="item-row" data-product-id="${item.product_id}">
             <div class="product-name">${nameWithBadge}</div>
             <div class="product-code">Código: ${product.codprodfilho}</div>
           </div>
@@ -1609,10 +1609,7 @@ window.handleQtyChange = async function(itemId, newQty) {
     }
     
     console.log('🔄 Alterando quantidade:', { itemId, newQty: qty });
-    const success = await updateItemQty(itemId, qty);
-    if (success) {
-      console.log('✅ Quantidade atualizada com sucesso');
-    }
+    await updateItemQty(itemId, qty);
   } catch (error) {
     console.error('Erro ao alterar quantidade:', error);
     showAlert('Erro ao alterar quantidade: ' + error.message);
