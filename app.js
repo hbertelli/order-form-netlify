@@ -1399,6 +1399,42 @@ async function loadItems() {
 }
 
 /* ---------- initialization ---------- */
+function setupFloatingBar() {
+  const actionsBar = document.querySelector('.actions-bar');
+  const mainActions = document.querySelector('.actions');
+  
+  if (!actionsBar || !mainActions) return;
+  
+  let ticking = false;
+  
+  function updateFloatingBar() {
+    const mainActionsRect = mainActions.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    
+    // Mostrar barra flutuante quando a seção principal não está visível
+    if (mainActionsRect.top > windowHeight || mainActionsRect.bottom < 0) {
+      actionsBar.classList.remove('hidden');
+    } else {
+      actionsBar.classList.add('hidden');
+    }
+    
+    ticking = false;
+  }
+  
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(updateFloatingBar);
+      ticking = true;
+    }
+  }
+  
+  // Configurar scroll listener
+  window.addEventListener('scroll', onScroll, { passive: true });
+  
+  // Verificar estado inicial
+  updateFloatingBar();
+}
+
 async function init() {
   try {
     console.log('🚀 Iniciando aplicação...');
