@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2563eb">
   <title>Pedido — Wise Sales</title>
+  <title>Orçamento — Wise Sales</title>
   <link rel="stylesheet" href="/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
   <header>
-    <h1>📋 Revisar Pedido</h1>
+    <h1>📋 Revisar Orçamento</h1>
     <div id="customer-info" style="margin: 16px 0;"></div>
     <p id="session-info"></p>
     <p id="order-preview" style="font-size: 14px; opacity: 0.9; margin: 8px 0 0;"></p>
@@ -22,7 +23,7 @@
 
     <section id="items-section" class="card">
       <div class="card-header">
-        <h2>🛒 Itens do Pedido</h2>
+        <h2>🛒 Itens do Orçamento</h2>
         <button id="add-product-btn" type="button" class="btn-add-product">✚ Adicionar Produto</button>
       </div>
       <div id="items-list"></div>
@@ -38,7 +39,7 @@
       <div style="display: flex; gap: 12px;">
         <button id="main-add-product-btn" type="button">✚ <span class="btn-text">Adicionar</span></button>
         <button id="main-save-btn" type="button">💾 <span class="btn-text">Salvar</span></button>
-        <button id="main-submit-btn" type="button">🚀 <span class="btn-text">Enviar</span></button>
+        <button id="main-submit-btn" type="button">✅ <span class="btn-text">Aprovar</span></button>
       </div>
     </div>
    
@@ -82,7 +83,7 @@
         <button id="footer-save-btn" type="button">
           💾 <span class="btn-text">Salvar</span>
         </button>
-        <button id="footer-submit-btn" type="button">🚀 <span class="btn-text">Enviar</span></button>
+        <button id="footer-submit-btn" type="button">✅ <span class="btn-text">Aprovar</span></button>
       </div>
     </div>
   </div>
