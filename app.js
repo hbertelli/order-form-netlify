@@ -611,4 +611,868 @@ async function handleProductSearch() {
       const promoPrice = toDecimal(product.promo3) || 0;
       const hasPromotion = promoPrice > 0 && promoPrice < basePrice;
       
-      const
+      const priceHtml = hasPromotion ? `
+        <div class="product-price promotion">
+          <div class="original-price">R$ ${basePrice.toFixed(2).replace('.', ',')}</div>
+          <div class="promo-price">R$ ${promoPrice.toFixed(2).replace('.', ',')}</div>
+        </div>
+      ` : `
+        <div class="product-price">R$ ${unitPrice.toFixed(2).replace('.', ',')}</div>
+      `;
+      
+      const nameWithBadge = hasPromotion ? 
+        `${product.descricao} <span class="promo-badge">Promoção</span>` : 
+        product.descricao;
+      
+      return `
+        <div class="product-result" data-product-id="${product.codprodfilho}">
+          <div class="product-info">
+            <div class="product-name">${nameWithBadge}</div>
+            <div class="product-code">Código: ${product.codprodfilho}</div>
+          </div>
+          ${priceHtml}
+          <div class="product-actions">
+            <div class="qty-selector">
+              <label>Qtd:</label>
+              <input type="number" min="1" value="1" class="qty-input-modal" data-product-id="${product.codprodfilho}">
+            </div>
+            <button class="btn-add-to-order" data-product-id="${product.codprodfilho}">
+              ✚ Adicionar
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    searchResults.innerHTML = html;
+    
+    // Adicionar event listeners para os botões
+    searchResults.querySelectorAll('.btn-add-to-order').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const productId = e.target.dataset.productId;
+        const qtyInput = searchResults.querySelector(`.qty-input-modal[data-product-id="${productId}"]`);
+        const qty = parseInt(qtyInput.value) || 1;
+        
+        try {
+          e.target.disabled = true;
+          e.target.textContent = 'Adicionando...';
+          
+          await addProductToOrder(productId, qty);
+          
+          // Fechar modal após adicionar
+          hideProductSearchModal();
+          
+        } catch (error) {
+          console.error('Erro ao adicionar produto:', error);
+          showAlert('Erro ao adicionar produto: ' + error.message);
+        } finally {
+          e.target.disabled = false;
+          e.target.textContent = '✚ Adicionar';
+        }
+      });
+    });
+    
+  } catch (error) {
+    console.error('Erro na busca:', error);
+    searchLoading.style.display = 'none';
+    searchResults.innerHTML = '<div class="search-empty"><div class="search-empty-icon">❌</div><p>Erro na busca</p><small>' + error.message + '</small></div>';
+  } finally {
+    isSearching = false;
+  }
+}
+
+async function addProductToOrder(productId, qty = 1) {
+  try {
+    // Buscar dados atuais do produto para capturar preços
+    const { data: product, error: productError } = await currentSupabase
+      .from('produtos_atacamax')
+      .select('codprodfilho, descricao, preco3, promo3')
+      .eq('codprodfilho', productId)
+      .single();
+    
+    if (productError || !product) {
+      throw new Error('Produto não encontrado');
+    }
+    
+    // Calcular preços no momento da adição
+    const originalPrice = toDecimal(product.preco3) || 0;
+    const promoPrice = toDecimal(product.promo3) || 0;
+    const unitPrice = (promoPrice > 0 && promoPrice < originalPrice) ? promoPrice : originalPrice;
+    
+    // Verificar se o produto já existe no pedido
+    const existingItemIndex = items.findIndex(item => item.product_id === productId);
+    
+    if (existingItemIndex >= 0) {
+      // Produto já existe, apenas aumentar quantidade
+      const newQty = (items[existingItemIndex].qty || 0) + qty;
+      await updateItemQty(items[existingItemIndex].id, newQty);
+    } else {
+      // Produto novo, adicionar à lista
+      const { data: newItem, error: insertError } = await currentSupabase
+        .from('order_items')
+        .insert({
+          session_id: session.id,
+          product_id: productId,
+          qty: qty,
+          unit_price: unitPrice,
+          promo_price: promoPrice > 0 ? promoPrice : null,
+          original_price: originalPrice
+        })
+        .select('id, session_id, product_id, qty, unit_price, promo_price, original_price')
+        .single();
+      
+      if (insertError) {
+        throw new Error('Erro ao adicionar produto: ' + insertError.message);
+      }
+      
+      // Adicionar à lista local
+      items.push({
+        id: newItem.id,
+        session_id: newItem.session_id,
+        product_id: newItem.product_id,
+        qty: newItem.qty,
+        unit_price: newItem.unit_price,
+        promo_price: newItem.promo_price,
+        original_price: newItem.original_price,
+        descricao: product.descricao
+      });
+    }
+    
+    // Atualizar interface
+    renderItems();
+    updateTotalsBoth();
+    
+    console.log('✅ Produto adicionado:', { productId, qty, unitPrice, originalPrice, promoPrice });
+    
+  } catch (error) {
+    console.error('Erro ao adicionar produto:', error);
+    throw error;
+  }
+}
+
+function handleQtyChange(itemId, newQty) {
+  const qty = Math.max(1, parseInt(newQty) || 1);
+  updateItemQty(itemId, qty);
+}
+
+async function updateItemQty(itemId, newQty) {
+  try {
+    // Atualizar apenas a quantidade, mantendo os preços salvos
+    const { error } = await currentSupabase
+      .from('order_items')
+      .update({ qty: newQty })
+      .eq('id', itemId);
+    
+    if (error) throw error;
+    
+    // Atualizar localmente
+    const item = items.find(it => it.id === itemId);
+    if (item) {
+      item.qty = newQty;
+    }
+    
+    updateTotalsBoth();
+    console.log('✅ Quantidade atualizada:', { itemId, newQty });
+    
+  } catch (error) {
+    console.error('Erro ao atualizar quantidade:', error);
+    showAlert('Erro ao atualizar quantidade: ' + error.message);
+  }
+}
+
+async function removeItem(itemId) {
+  try {
+    const { error } = await currentSupabase
+      .from('order_items')
+      .delete()
+      .eq('id', itemId);
+    
+    if (error) throw error;
+    
+    // Remover da lista local
+    items = items.filter(it => it.id !== itemId);
+    
+    renderItems();
+    updateTotalsBoth();
+    
+    console.log('✅ Item removido:', itemId);
+    
+  } catch (error) {
+    console.error('Erro ao remover item:', error);
+    showAlert('Erro ao remover item: ' + error.message);
+  }
+}
+
+async function saveChanges() {
+  try {
+    console.log('💾 Salvando alterações...');
+    
+    // As alterações já são salvas automaticamente quando feitas
+    // Esta função pode ser usada para validações adicionais se necessário
+    
+    console.log('✅ Alterações salvas com sucesso');
+    
+  } catch (error) {
+    console.error('Erro ao salvar:', error);
+    throw error;
+  }
+}
+
+let isSubmitting = false;
+
+function setSubmitting(state) {
+  isSubmitting = state;
+  
+  // Desabilitar/habilitar botões de submit
+  const submitButtons = [
+    document.getElementById('main-submit-btn'),
+    document.getElementById('footer-submit-btn')
+  ];
+  
+  submitButtons.forEach(btn => {
+    if (btn) {
+      btn.disabled = state;
+      if (state) {
+        btn.textContent = btn.textContent.replace('✅', '⏳').replace('Aprovar', 'Aprovando...');
+      } else {
+        btn.textContent = btn.textContent.replace('⏳', '✅').replace('Aprovando...', 'Aprovar');
+      }
+    }
+  });
+}
+
+async function submitOrder() {
+  if (isSubmitting) return;
+  
+  if (!items || items.length === 0) {
+    showAlert('Adicione pelo menos um item ao orçamento antes de aprovar.');
+    return;
+  }
+  
+  // Mostrar modal para coletar dados do aprovador
+  showApproverModal();
+}
+
+function showSuccessPage() {
+  const orderNumber = window.lastOrderNumber || session?.estimated_order_number || 'N/A';
+  
+  document.body.innerHTML = `
+    <div style="
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--success-light) 0%, #ffffff 100%);
+      padding: 20px;
+    ">
+      <div style="
+        max-width: 500px;
+        background: white;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: var(--shadow-lg);
+        text-align: center;
+        border: 1px solid var(--success);
+      ">
+        <div style="font-size: 64px; margin-bottom: 20px;">🎉</div>
+        <h1 style="
+          font-size: 28px;
+          font-weight: 700;
+          margin: 0 0 16px;
+          color: var(--success);
+        ">Orçamento Aprovado!</h1>
+        <p style="
+          font-size: 18px;
+          font-weight: 600;
+          margin: 0 0 8px;
+          color: var(--gray-800);
+        ">Pedido #${orderNumber}</p>
+        <p style="
+          font-size: 16px;
+          line-height: 1.6;
+          margin: 0 0 24px;
+          color: var(--gray-600);
+        ">
+          Seu orçamento foi aprovado com sucesso e nossa equipe foi notificada. 
+          Em breve entraremos em contato para finalizar o pedido.
+        </p>
+        <div style="
+          background: var(--success-light);
+          padding: 16px;
+          border-radius: 8px;
+          border-left: 4px solid var(--success);
+          margin-bottom: 24px;
+        ">
+          <p style="
+            margin: 0;
+            font-size: 14px;
+            color: var(--success);
+            font-weight: 600;
+          ">
+            ✅ Confirmação enviada por e-mail
+          </p>
+        </div>
+        <small style="
+          color: var(--gray-500);
+          font-size: 13px;
+        ">
+          Você pode fechar esta página com segurança.
+        </small>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- customer info ---------- */
+function formatAddress(customer) {
+  if (!customer) return '';
+  
+  const parts = [];
+  
+  // Logradouro e número
+  if (customer.logradouro) {
+    let address = customer.logradouro;
+    // Capitalizar primeira letra de cada palavra
+    address = address.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    
+    if (customer.numero) {
+      address += `, ${customer.numero}`;
+    }
+    parts.push(address);
+  }
+  
+  // Bairro
+  if (customer.bairro) {
+    let bairro = customer.bairro.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    parts.push(bairro);
+  }
+  
+  // Cidade e UF
+  if (customer.cidade || customer.uf) {
+    let cityState = '';
+    if (customer.cidade) {
+      cityState = customer.cidade.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    }
+    if (customer.uf) {
+      cityState += cityState ? `, ${customer.uf.toUpperCase()}` : customer.uf.toUpperCase();
+    }
+    parts.push(cityState);
+  }
+  
+  // CEP
+  if (customer.cep) {
+    parts.push(customer.cep);
+  }
+  
+  return parts.join(', ');
+}
+
+function updateCustomerHeader() {
+  const customerInfoDiv = document.getElementById('customer-info');
+  
+  console.log('🔍 Debug - Elemento customer-info encontrado:', customerInfoDiv);
+  console.log('🔍 Debug - customerInfoDiv.style.display antes:', customerInfoDiv?.style.display);
+  
+  if (!customerInfoDiv) {
+    console.error('❌ Elemento customer-info não encontrado no DOM');
+    return;
+  }
+  
+  if (!customerData) {
+    console.log('⚠️ customerData não disponível');
+    customerInfoDiv.style.display = 'none';
+    return;
+  }
+  
+  // Garantir que o elemento seja exibido
+  customerInfoDiv.style.display = 'block';
+  
+  // Formatar nome fantasia ou razão social
+  const displayName = customerData.nomefantazia || customerData.nome || 'Cliente';
+  const razaoSocial = customerData.nome !== customerData.nomefantazia ? customerData.nome : null;
+  
+  // Formatar CNPJ
+  const cnpj = customerData.cpfcgc || '';
+  
+  // Formatar endereço
+  const endereco = formatAddress(customerData);
+  console.log('🔍 Debug - Endereço formatado:', endereco);
+  
+  const customerHtml = `
+    <div class="customer-header">
+      <div class="customer-main">
+        <div class="customer-code">Cliente ${customerData.codpessoa}</div>
+        <div class="customer-name">${displayName}</div>
+        ${razaoSocial ? `<div class="customer-razao">${razaoSocial}</div>` : ''}
+      </div>
+      <div class="customer-details">
+        <div class="customer-cnpj">CNPJ: ${cnpj}</div>
+        ${endereco ? `<div class="customer-address">${endereco}</div>` : ''}
+      </div>
+    </div>
+  `;
+  
+  customerInfoDiv.innerHTML = customerHtml;
+  
+  console.log('✅ Debug - HTML do cliente inserido no DOM');
+  console.log('🔍 Debug - customerInfoDiv.innerHTML após inserção:', customerInfoDiv.innerHTML);
+}
+
+/* ---------- render functions ---------- */
+function renderItems() {
+  if (!itemsList) return;
+  
+  if (!items || items.length === 0) {
+    itemsList.innerHTML = '';
+    if (emptyHint) emptyHint.style.display = 'block';
+    return;
+  }
+  
+  if (emptyHint) emptyHint.style.display = 'none';
+  
+  const html = items.map(item => {
+    // Usar preços salvos da order_items, com fallback para produtos_atacamax
+    const unitPrice = item.unit_price || 0;
+    const originalPrice = item.original_price || 0;
+    const promoPrice = item.promo_price || 0;
+    
+    const hasPromotion = promoPrice > 0 && promoPrice < originalPrice;
+    const subtotal = unitPrice * (item.qty || 0);
+    
+    const priceHtml = hasPromotion ? `
+      <div class="item-price promotion">
+        <div class="original-price">R$ ${originalPrice.toFixed(2).replace('.', ',')}</div>
+        <div class="promo-price">R$ ${promoPrice.toFixed(2).replace('.', ',')}</div>
+      </div>
+    ` : `
+      <div class="item-price">R$ ${unitPrice.toFixed(2).replace('.', ',')}</div>
+    `;
+    
+    const nameWithBadge = hasPromotion ? 
+      `${item.descricao} <span class="promo-badge">Promoção</span>` : 
+      item.descricao;
+    
+    return `
+      <div class="item-row" data-item-id="${item.id}">
+        <div class="item-title-wrap">
+          <div class="item-title">${nameWithBadge}</div>
+          <div class="item-meta">Código: ${item.product_id}</div>
+        </div>
+        ${priceHtml}
+        <input 
+          type="number" 
+          min="1" 
+          value="${item.qty || 1}" 
+          class="qty-input" 
+          data-item-id="${item.id}"
+          onchange="handleQtyChange('${item.id}', this.value)"
+        >
+        <div class="item-subtotal">R$ ${subtotal.toFixed(2).replace('.', ',')}</div>
+        <button 
+          class="btn-remove" 
+          onclick="removeItem('${item.id}')"
+        >🗑️ Remover</button>
+      </div>
+    `;
+  }).join('');
+  
+  itemsList.innerHTML = html;
+}
+
+function renderItemsReadonly() {
+  const itemsListElement = document.getElementById('items-list');
+  if (!itemsListElement) {
+    console.error('❌ Elemento items-list não encontrado para renderização readonly');
+    return;
+  }
+  
+  if (!items || items.length === 0) {
+    itemsListElement.innerHTML = '<div class="empty"><div style="font-size: 48px; margin-bottom: 16px;">📦</div><p>Nenhum item encontrado</p></div>';
+    return;
+  }
+  
+  const html = items.map(item => {
+    // Usar preços salvos da order_items
+    const unitPrice = item.unit_price || 0;
+    const originalPrice = item.original_price || 0;
+    const promoPrice = item.promo_price || 0;
+    
+    const hasPromotion = promoPrice > 0 && promoPrice < originalPrice;
+    const subtotal = unitPrice * (item.qty || 0);
+    
+    const priceHtml = hasPromotion ? `
+      <div class="item-price promotion">
+        <div class="original-price">R$ ${originalPrice.toFixed(2).replace('.', ',')}</div>
+        <div class="promo-price">R$ ${promoPrice.toFixed(2).replace('.', ',')}</div>
+      </div>
+    ` : `
+      <div class="item-price">R$ ${unitPrice.toFixed(2).replace('.', ',')}</div>
+    `;
+    
+    const nameWithBadge = hasPromotion ? 
+      `${item.descricao} <span class="promo-badge">Promoção</span>` : 
+      item.descricao;
+    
+    return `
+      <div class="item-row readonly">
+        <div class="item-title-wrap">
+          <div class="item-title">${nameWithBadge}</div>
+          <div class="item-meta">Código: ${item.product_id}</div>
+        </div>
+        <div class="qty-display">${item.qty || 1}</div>
+        ${priceHtml}
+        <div class="item-subtotal">R$ ${subtotal.toFixed(2).replace('.', ',')}</div>
+      </div>
+    `;
+  }).join('');
+  
+  itemsListElement.innerHTML = html;
+  updateTotalsBoth();
+}
+
+/* ---------- data loading ---------- */
+async function loadSession() {
+  try {
+    console.log('🔍 Tentando carregar sessão com token:', token);
+    
+    const { data: sessionData, error: sessionError } = await supabase
+      .from('order_sessions')
+      .select('id, customer_id, expires_at, used, created_at, estimated_order_number, schema, view_name')
+      .eq('id', token)
+      .single();
+
+    if (sessionError || !sessionData) {
+      console.error('❌ Sessão não encontrada:', sessionError);
+      showErrorPage(
+        "Sessão Inválida", 
+        "Este link de orçamento não é válido ou expirou. Verifique se você copiou o link completo ou solicite um novo link.",
+        "🔗"
+      );
+      return null;
+    }
+
+    // Verificar se a sessão expirou
+    if (new Date(sessionData.expires_at) < new Date()) {
+      showErrorPage(
+        "Link Expirado", 
+        "Este link de orçamento expirou. Links de orçamento são válidos por 48 horas após a criação.",
+        "⏰"
+      );
+      return null;
+    }
+
+    // Verificar se a sessão já foi usada (orçamento aprovado)
+    if (sessionData.used) {
+      showUsedSessionPage();
+      return sessionData; // Retorna para permitir visualização readonly
+    }
+
+    console.log('✅ Sessão carregada:', sessionData);
+    return sessionData;
+
+  } catch (error) {
+    console.error('❌ Erro ao carregar sessão:', error);
+    showErrorPage(
+      "Erro de Conexão", 
+      "Não foi possível conectar ao servidor. Verifique sua conexão com a internet e tente novamente.",
+      "🌐"
+    );
+    return null;
+  }
+}
+
+async function loadCustomer(customerId) {
+  try {
+    console.log('🔍 Debug - Buscando cliente com ID:', customerId);
+    
+    const { data: customer, error: customerError } = await currentSupabase
+      .from("clientes_atacamax")
+      .select("codpessoa, nome, cpfcgc, nomefantazia, logradouro, numero, bairro, cidade, uf, cep")
+      .eq("codpessoa", customerId)
+      .single();
+    
+    console.log('🔍 Debug - Resultado da consulta do cliente:', { customer, customerError });
+    
+    if (customerError || !customer) {
+      console.error('❌ Cliente não encontrado:', customerError);
+      showErrorPage(
+        "Cliente Não Encontrado", 
+        "Os dados do cliente não foram encontrados no sistema. Entre em contato conosco para resolver este problema.",
+        "👤"
+      );
+      return null;
+    }
+
+    console.log('🔍 Debug - customerData definido:', customer);
+    return customer;
+
+  } catch (error) {
+    console.error('❌ Erro ao carregar cliente:', error);
+    showErrorPage(
+      "Erro ao Carregar Cliente", 
+      "Ocorreu um erro ao carregar os dados do cliente. Tente novamente em alguns instantes.",
+      "❌"
+    );
+    return null;
+  }
+}
+
+async function loadItems() {
+  try {
+    console.log('🔍 Debug - Iniciando loadItems para session:', session.id);
+    
+    // Debug: testar se a tabela order_items existe e tem dados
+    const { data: allItems, error: allError } = await currentSupabase
+      .from('order_items')
+      .select('*')
+      .limit(5);
+    
+    console.log('🔍 Debug - Teste geral da tabela order_items:', { allItems: allItems?.length, allError, sample: allItems?.[0] });
+    
+    // Buscar itens da sessão com preços salvos
+    const { data: rawItems, error: itemsError } = await currentSupabase
+      .from('order_items')
+      .select('id, session_id, product_id, qty, unit_price, promo_price, original_price')
+      .eq('session_id', session.id);
+
+    if (itemsError) {
+      console.error('❌ Erro ao carregar itens:', itemsError);
+      showAlert('Erro ao carregar itens do orçamento: ' + itemsError.message);
+      return;
+    }
+
+    console.log('🔍 Debug - Items encontrados:', rawItems?.length || 0);
+    console.log('🔍 Debug - Session ID:', session.id);
+    console.log('🔍 Debug - Raw items:', rawItems);
+
+    if (!rawItems || rawItems.length === 0) {
+      items = [];
+      renderItems();
+      updateTotalsBoth();
+      return;
+    }
+
+    // Buscar descrições dos produtos
+    const productIds = rawItems.map(item => item.product_id);
+    console.log('🔍 Debug - Product IDs para buscar:', productIds);
+    
+    // Converter para números para a query
+    const numericProductIds = productIds.map(id => parseInt(id)).filter(id => !isNaN(id));
+    console.log('🔍 Debug - Buscando produtos com IDs:', numericProductIds);
+    
+    const { data: products, error: productsError } = await currentSupabase
+      .from('produtos_atacamax')
+      .select('codprodfilho, descricao, preco3, promo3')
+      .in('codprodfilho', numericProductIds);
+
+    console.log('🔍 Debug - Query produtos:', { 
+      schema: schema, 
+      productIds: numericProductIds, 
+      found: products?.length || 0, 
+      error: productsError 
+    });
+
+    if (productsError) {
+      console.error('❌ Erro ao carregar produtos:', productsError);
+      showAlert('Erro ao carregar dados dos produtos: ' + productsError.message);
+      return;
+    }
+
+    console.log('🔍 Debug - Produtos encontrados neste lote:', products?.length || 0);
+
+    // Criar mapa de produtos por ID
+    const productsMap = new Map();
+    if (products) {
+      products.forEach(p => {
+        productsMap.set(String(p.codprodfilho), p);
+      });
+    }
+
+    console.log('🔍 Debug - Total de produtos encontrados:', productsMap.size);
+
+    // Combinar dados dos itens com descrições dos produtos
+    items = rawItems.map(item => {
+      const product = productsMap.get(String(item.product_id));
+      
+      return {
+        id: item.id,
+        session_id: item.session_id,
+        product_id: item.product_id,
+        qty: item.qty || 1,
+        // Usar preços salvos da order_items, com fallback para produtos_atacamax
+        unit_price: item.unit_price || (product ? computeUnitPrice(product) : 0),
+        promo_price: item.promo_price || (product ? toDecimal(product.promo3) : 0),
+        original_price: item.original_price || (product ? toDecimal(product.preco3) : 0),
+        descricao: product?.descricao || `Produto ${item.product_id}`
+      };
+    });
+
+    renderItems();
+    updateTotalsBoth();
+
+    console.log('✅ Items carregados com sucesso:', items.length);
+
+  } catch (error) {
+    console.error('❌ Erro ao carregar itens:', error);
+    showAlert('Erro inesperado ao carregar itens: ' + error.message);
+  }
+}
+
+/* ---------- initialization ---------- */
+async function init() {
+  try {
+    console.log('🚀 Iniciando aplicação...');
+    
+    // Carregar sessão
+    session = await loadSession();
+    if (!session) return; // Erro já tratado em loadSession
+    
+    // Atualizar informações da sessão na interface
+    if (sessionInfo) {
+      const expiresText = fmtDate(session.expires_at);
+      const orderNumber = session.estimated_order_number ? ` #${session.estimated_order_number}` : '';
+      sessionInfo.textContent = `Orçamento${orderNumber} • Expira em ${expiresText}`;
+    }
+    
+    // Carregar dados do cliente
+    customerData = await loadCustomer(session.customer_id);
+    if (!customerData) return; // Erro já tratado em loadCustomer
+    
+    // Atualizar cabeçalho do cliente
+    updateCustomerHeader();
+    
+    // Carregar itens do orçamento
+    await loadItems();
+    
+    // Configurar event listeners
+    
+    // Botões de adicionar produto
+    const addProductBtns = [
+      document.getElementById('add-product-btn'),
+      document.getElementById('main-add-product-btn'),
+      document.getElementById('footer-add-product-btn')
+    ];
+    
+    addProductBtns.forEach(btn => {
+      if (btn) {
+        btn.addEventListener('click', showProductSearchModal);
+      }
+    });
+    
+    // Botões de salvar
+    const saveBtns = [
+      document.getElementById('main-save-btn'),
+      document.getElementById('footer-save-btn')
+    ];
+    
+    saveBtns.forEach(btn => {
+      if (btn) {
+        btn.addEventListener('click', saveChanges);
+      }
+    });
+    
+    // Botões de aprovar orçamento
+    const submitBtns = [
+      document.getElementById('main-submit-btn'),
+      document.getElementById('footer-submit-btn')
+    ];
+    
+    submitBtns.forEach(btn => {
+      if (btn) {
+        btn.addEventListener('click', submitOrder);
+      }
+    });
+    
+    // Modal de busca de produtos
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    if (closeModalBtn) {
+      closeModalBtn.addEventListener('click', hideProductSearchModal);
+    }
+    
+    const searchBtn = document.getElementById('search-btn');
+    if (searchBtn) {
+      searchBtn.addEventListener('click', handleProductSearch);
+    }
+    
+    const searchInput = document.getElementById('product-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          handleProductSearch();
+        }
+      });
+    }
+    
+    // Modal de aprovador
+    const cancelApproval = document.getElementById('cancel-approval');
+    if (cancelApproval) {
+      cancelApproval.addEventListener('click', hideApproverModal);
+    }
+    
+    const approverForm = document.getElementById('approver-form');
+    if (approverForm) {
+      approverForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        approverData = {
+          name: formData.get('name'),
+          phone: formData.get('phone'),
+          email: formData.get('email')
+        };
+        
+        // Validar dados básicos
+        if (!approverData.name || !approverData.phone || !approverData.email) {
+          alert('Por favor, preencha todos os campos obrigatórios.');
+          return;
+        }
+        
+        // Validar email básico
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(approverData.email)) {
+          alert('Por favor, digite um e-mail válido.');
+          return;
+        }
+        
+        hideApproverModal();
+        await processApproval();
+      });
+    }
+    
+    // Fechar modal ao clicar fora
+    const productModal = document.getElementById('product-search-modal');
+    if (productModal) {
+      productModal.addEventListener('click', (e) => {
+        if (e.target === productModal) {
+          hideProductSearchModal();
+        }
+      });
+    }
+    
+    const approverModal = document.getElementById('approver-modal');
+    if (approverModal) {
+      approverModal.addEventListener('click', (e) => {
+        if (e.target === approverModal) {
+          hideApproverModal();
+        }
+      });
+    }
+    
+    console.log('✅ Aplicação inicializada com sucesso');
+    
+  } catch (error) {
+    console.error('❌ Erro na inicialização:', error);
+    showErrorPage(
+      "Erro de Inicialização", 
+      "Ocorreu um erro ao carregar a aplicação. Tente recarregar a página ou entre em contato conosco.",
+      "⚠️"
+    );
+  }
+}
+
+// Inicializar quando o DOM estiver pronto
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
