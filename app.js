@@ -121,6 +121,26 @@ function showUsedSessionPage() {
         ">
           Este orçamento já foi aprovado anteriormente e não pode mais ser editado.
         </p>
+        <div id="approver-info-summary" style="
+          background: var(--success-light);
+          padding: 16px;
+          border-radius: 8px;
+          border-left: 4px solid var(--success);
+          margin-bottom: 24px;
+          text-align: left;
+        ">
+          <p style="
+            margin: 0 0 8px;
+            font-size: 14px;
+            color: var(--success);
+            font-weight: 600;
+          ">
+            👤 Aprovado por:
+          </p>
+          <div id="approver-details" style="font-size: 13px; color: var(--gray-600);">
+            Carregando dados do aprovador...
+          </div>
+        </div>
         <div style="
           background: var(--primary-light);
           padding: 16px;
@@ -160,6 +180,9 @@ function showUsedSessionPage() {
       </div>
     </div>
   `;
+  
+  // Carregar dados do aprovador
+  loadApproverData();
 }
 
 window.showReadonlyOrder = async function() {
@@ -180,12 +203,47 @@ window.showReadonlyOrder = async function() {
     
     await loadItems();
     
+    // Carregar dados do aprovador
+    let approverInfo = '';
+    try {
+      const { data: submittedOrder, error } = await currentSupabase
+        .from('orders_submitted')
+        .select('payload')
+        .eq('session_id', session.id)
+        .single();
+      
+      if (!error && submittedOrder?.payload?.approver) {
+        const approver = submittedOrder.payload.approver;
+        approverInfo = `
+          <div style="
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+          ">
+            <p style="margin: 0 0 8px; font-size: 14px; font-weight: 600;">
+              👤 Aprovado por:
+            </p>
+            <div style="font-size: 13px; opacity: 0.9;">
+              <div><strong>Nome:</strong> ${approver.name}</div>
+              <div><strong>Telefone:</strong> ${approver.phone}</div>
+              <div><strong>E-mail:</strong> ${approver.email}</div>
+            </div>
+          </div>
+        `;
+      }
+    } catch (e) {
+      console.error('Erro ao carregar dados do aprovador:', e);
+    }
+    
     // Renderizar a interface em modo somente leitura
     document.body.innerHTML = `
       <header>
         <h1>📋 Orçamento Aprovado ${session.estimated_order_number ? `#${session.estimated_order_number}` : ''}</h1>
         <div id="customer-info" style="margin: 16px 0;"></div>
         <p id="session-info">Orçamento aprovado em ${fmtDate(session.created_at)}</p>
+        ${approverInfo}
         <div style="
           background: rgba(255, 255, 255, 0.1);
           padding: 12px;
@@ -251,6 +309,44 @@ window.showReadonlyOrder = async function() {
 
 // Tornar showUsedSessionPage disponível globalmente também
 window.showUsedSessionPage = showUsedSessionPage;
+
+// Função para carregar dados do aprovador
+async function loadApproverData() {
+  try {
+    if (!session || !session.id) return;
+    
+    const { data: submittedOrder, error } = await currentSupabase
+      .from('orders_submitted')
+      .select('payload')
+      .eq('session_id', session.id)
+      .single();
+    
+    if (error || !submittedOrder) {
+      console.log('Dados do aprovador não encontrados:', error);
+      return;
+    }
+    
+    const approver = submittedOrder.payload?.approver;
+    const approverDetailsDiv = document.getElementById('approver-details');
+    
+    if (approver && approverDetailsDiv) {
+      approverDetailsDiv.innerHTML = `
+        <div style="margin-bottom: 4px;"><strong>Nome:</strong> ${approver.name}</div>
+        <div style="margin-bottom: 4px;"><strong>Telefone:</strong> ${approver.phone}</div>
+        <div><strong>E-mail:</strong> ${approver.email}</div>
+      `;
+    } else if (approverDetailsDiv) {
+      approverDetailsDiv.innerHTML = '<em>Dados do aprovador não disponíveis</em>';
+    }
+    
+  } catch (error) {
+    console.error('Erro ao carregar dados do aprovador:', error);
+    const approverDetailsDiv = document.getElementById('approver-details');
+    if (approverDetailsDiv) {
+      approverDetailsDiv.innerHTML = '<em>Erro ao carregar dados do aprovador</em>';
+    }
+  }
+}
 
 if (!token) { 
   showErrorPage(
@@ -575,6 +671,22 @@ async function addProductToOrder(productId, productName, unitPrice) {
       return;
     }
     
+    // Buscar preços atuais do produto para salvar
+    const { data: currentProduct, error: productError } = await currentSupabase
+      .from('produtos_atacamax')
+      .select('preco3, promo3')
+      .eq('codprodfilho', productId)
+      .single();
+    
+    if (productError) {
+      console.error('Erro ao buscar preços do produto:', productError);
+    }
+    
+    // Calcular preços no momento da adição
+    const originalPrice = parseFloat(currentProduct?.preco3 || '0');
+    const promoPrice = parseFloat(currentProduct?.promo3 || '0');
+    const finalUnitPrice = (promoPrice > 0 && promoPrice < originalPrice) ? promoPrice : originalPrice;
+    
     // Verificar se o produto já existe no orçamento
     const existingItem = items.find(item => item.product_id == productId);
     
@@ -610,9 +722,12 @@ async function addProductToOrder(productId, productName, unitPrice) {
         .insert({
           session_id: session.id,
           product_id: productId,
-          qty: qty
+          qty: qty,
+          unit_price: finalUnitPrice,
+          promo_price: promoPrice,
+          original_price: originalPrice
         })
-        .select('id, session_id, product_id, qty')
+        .select('id, session_id, product_id, qty, unit_price, promo_price, original_price')
         .single();
       
       if (error) throw error;
@@ -621,14 +736,14 @@ async function addProductToOrder(productId, productName, unitPrice) {
       const produto = {
         codprodfilho: productId,
         descricao: productName,
-        preco3: unitPrice,
-        promo3: 0
+        preco3: originalPrice,
+        promo3: promoPrice
       };
       
       items.push({
         ...newItem,
         produto: produto,
-        unit_price: unitPrice
+        unit_price: finalUnitPrice
       });
       
       // Feedback visual
@@ -1118,7 +1233,7 @@ async function loadItems(){
   
   const { data: rawItems, error } = await currentSupabase
     .from("order_items")
-    .select("id, session_id, product_id, qty")
+    .select("id, session_id, product_id, qty, unit_price, promo_price, original_price")
     .eq("session_id", session.id)
       
   if (error) throw error;
@@ -1181,7 +1296,8 @@ async function loadItems(){
 
   items = arr.map(it => {
     const p = byId.get(String(it.product_id)) || null;
-    const unit_price = computeUnitPrice(p);
+    // Usar preço salvo no item, não calcular novamente
+    const unit_price = it.unit_price || computeUnitPrice(p);
 
     return { ...it, produto: p, unit_price };
   });

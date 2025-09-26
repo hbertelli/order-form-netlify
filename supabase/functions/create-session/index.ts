@@ -340,10 +340,18 @@ Deno.serve(async (req: Request) => {
         const currentProduct = productsMap.get(lastProduct.codprodfilho)
         if (!currentProduct) return null // Produto não está mais ativo
         
+        // Calcular preços no momento da criação
+        const originalPrice = parseFloat(currentProduct.preco3 || '0')
+        const promoPrice = parseFloat(currentProduct.promo3 || '0')
+        const unitPrice = (promoPrice > 0 && promoPrice < originalPrice) ? promoPrice : originalPrice
+        
         return {
           session_id: session.id,
           product_id: lastProduct.codprodfilho,
-          qty: lastProduct.qtde || 1
+          qty: lastProduct.qtde || 1,
+          unit_price: unitPrice,
+          promo_price: promoPrice,
+          original_price: originalPrice
         }
       })
       .filter(Boolean) // Remove produtos nulos
