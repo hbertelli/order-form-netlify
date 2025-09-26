@@ -642,7 +642,7 @@ async function handleProductSearch() {
         product.descricao;
       
       return `
-        <div class="search-result-item">
+        <div class="item-row" data-product-id="${product.codprodfilho}">
           <div class="product-info">
             <div class="product-name">${nameWithBadge}</div>
             <div class="product-code">Código: ${product.codprodfilho}</div>
@@ -785,6 +785,7 @@ async function updateItemQty(itemId, newQty) {
     
     renderItems();
     updateTotalsBoth();
+    
   } catch (error) {
     console.error('Erro ao atualizar quantidade:', error);
     showAlert('Erro ao atualizar quantidade: ' + error.message);
@@ -797,7 +798,7 @@ async function handleRemoveItem(itemId) {
     const item = items.find(it => it.id === itemId);
     const productName = item ? item.descricao : 'este produto';
     
-    if (confirm(`Tem certeza que deseja remover "${productName}" do orçamento?`)) {
+    if (confirm(\`Tem certeza que deseja remover "${productName}\" do orçamento?`)) {
       await removeItem(itemId);
     }
   } catch (error) {
@@ -809,6 +810,7 @@ async function handleRemoveItem(itemId) {
 async function removeItem(itemId) {
   try {
     const { error } = await currentSupabase
+      .from('order_items')
       .delete()
       .eq('id', itemId);
     
@@ -1097,7 +1099,6 @@ function updateCustomerHeader() {
 }
 
 /* ---------- render functions ---------- */
-// Função para renderizar os itens na interface
 function renderItems() {
   if (!itemsList) return;
   
@@ -1128,7 +1129,7 @@ function renderItems() {
     `;
     
     const nameWithBadge = hasPromotion ? 
-      `${item.descricao} <span class="promo-badge">Promoção</span>` : 
+      \`${item.descricao} <span class="promo-badge">Promoção</span>` : 
       item.descricao;
     
     return `
@@ -1592,7 +1593,7 @@ async function init() {
 }
 
 // Inicializar aplicação quando DOM estiver pronto
-async function handleQtyChange(productId, newQty) {
+if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
   init();
@@ -1604,14 +1605,10 @@ window.handleQtyChange = async function(itemId, newQty) {
     const qty = parseInt(newQty);
     if (qty <= 0) {
       showAlert('Quantidade deve ser maior que zero');
-      await handleRemoveItem(productId);
+      return;
     }
     
-    const success = await updateItemQty(currentSession.id, productId, qty);
-    if (success) {
-      // Re-carrega os itens para atualizar a interface
-      await loadItems(currentSession.id);
-    }
+    console.log('🔄 Alterando quantidade:', { itemId, newQty: qty });
     await updateItemQty(itemId, qty);
   } catch (error) {
     console.error('Erro ao alterar quantidade:', error);
@@ -1619,7 +1616,7 @@ window.handleQtyChange = async function(itemId, newQty) {
   }
 };
 
-async function handleRemoveItem(productId) {
+window.handleRemoveItem = async function(itemId) {
   try {
     const item = items.find(it => it.id === itemId);
     const productName = item ? item.descricao : 'este produto';
@@ -1629,11 +1626,7 @@ async function handleRemoveItem(productId) {
       await removeItem(itemId);
     }
   } catch (error) {
-      const success = await removeItem(currentSession.id, productId);
-      if (success) {
-        // Re-carrega os itens para atualizar a interface
-        await loadItems(currentSession.id);
-      }
+    console.error('Erro ao remover item:', error);
     showAlert('Erro ao remover item: ' + error.message);
   }
 };
