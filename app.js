@@ -1609,7 +1609,10 @@ window.handleQtyChange = async function(itemId, newQty) {
     }
     
     console.log('🔄 Alterando quantidade:', { itemId, newQty: qty });
-    await updateItemQty(itemId, qty);
+    const success = await updateItemQty(itemId, qty);
+    if (success) {
+      console.log('✅ Quantidade atualizada com sucesso');
+    }
   } catch (error) {
     console.error('Erro ao alterar quantidade:', error);
     showAlert('Erro ao alterar quantidade: ' + error.message);
