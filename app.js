@@ -798,7 +798,7 @@ async function handleRemoveItem(itemId) {
     const item = items.find(it => it.id === itemId);
     const productName = item ? item.descricao : 'este produto';
     
-    if (confirm(\`Tem certeza que deseja remover "${productName}\" do orçamento?`)) {
+    if (confirm(`Tem certeza que deseja remover "${productName}" do orçamento?`)) {
       await removeItem(itemId);
     }
   } catch (error) {
@@ -1129,7 +1129,7 @@ function renderItems() {
     `;
     
     const nameWithBadge = hasPromotion ? 
-      \`${item.descricao} <span class="promo-badge">Promoção</span>` : 
+      `${item.descricao} <span class="promo-badge">Promoção</span>` : 
       item.descricao;
     
     return `
