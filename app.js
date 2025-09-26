@@ -785,7 +785,6 @@ async function updateItemQty(itemId, newQty) {
     
     renderItems();
     updateTotalsBoth();
-    
   } catch (error) {
     console.error('Erro ao atualizar quantidade:', error);
     showAlert('Erro ao atualizar quantidade: ' + error.message);
@@ -810,7 +809,6 @@ async function handleRemoveItem(itemId) {
 async function removeItem(itemId) {
   try {
     const { error } = await currentSupabase
-      .from('order_items')
       .delete()
       .eq('id', itemId);
     
