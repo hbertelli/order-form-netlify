@@ -313,7 +313,12 @@ window.showUsedSessionPage = showUsedSessionPage;
 // Função para carregar dados do aprovador
 async function loadApproverData() {
   try {
-    if (!session || !session.id) return;
+    if (!session || !session.id) {
+      console.log('⚠️ Session não disponível para carregar dados do aprovador');
+      return;
+    }
+    
+    console.log('🔍 Carregando dados do aprovador para session:', session.id);
     
     const { data: submittedOrder, error } = await currentSupabase
       .from('orders_submitted')
@@ -321,12 +326,20 @@ async function loadApproverData() {
       .eq('session_id', session.id)
       .single();
     
+    console.log('🔍 Resultado da consulta do aprovador:', { submittedOrder, error });
+    
     if (error || !submittedOrder) {
       console.log('Dados do aprovador não encontrados:', error);
+      const approverDetailsDiv = document.getElementById('approver-details');
+      if (approverDetailsDiv) {
+        approverDetailsDiv.innerHTML = '<em>Dados do aprovador não disponíveis</em>';
+      }
       return;
     }
     
     const approver = submittedOrder.payload?.approver;
+    console.log('🔍 Dados do aprovador encontrados:', approver);
+    
     const approverDetailsDiv = document.getElementById('approver-details');
     
     if (approver && approverDetailsDiv) {
@@ -335,8 +348,10 @@ async function loadApproverData() {
         <div style="margin-bottom: 4px;"><strong>Telefone:</strong> ${approver.phone}</div>
         <div><strong>E-mail:</strong> ${approver.email}</div>
       `;
+      console.log('✅ Dados do aprovador inseridos no DOM');
     } else if (approverDetailsDiv) {
       approverDetailsDiv.innerHTML = '<em>Dados do aprovador não disponíveis</em>';
+      console.log('⚠️ Aprovador não encontrado ou elemento DOM não existe');
     }
     
   } catch (error) {
