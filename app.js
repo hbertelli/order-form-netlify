@@ -767,20 +767,30 @@ async function addProductToOrder(productId, qty = 1) {
   }
 }
 
+// Função global para lidar com mudança de quantidade
 function handleQtyChange(itemId, newQty) {
-  const qty = Math.max(1, parseInt(newQty) || 1);
-  updateItemQty(itemId, qty).then(() => {
-    // Atualizar totais após mudança de quantidade
-    updateTotalsBoth();
-  }).catch(error => {
-    console.error('Erro ao atualizar quantidade:', error);
-    showAlert('Erro ao atualizar quantidade: ' + error.message);
-  });
+  console.log('🔄 Alterando quantidade:', { itemId, newQty });
+  
+  if (newQty <= 0) {
+    alert('Quantidade deve ser maior que zero');
+    return;
+  }
+  
+  updateItemQty(itemId, newQty);
 }
 
+// Função global para remover item
+function handleRemoveItem(itemId) {
+  console.log('🗑️ Removendo item:', itemId);
+  
+  if (confirm('Tem certeza que deseja remover este item do orçamento?')) {
+    removeItem(itemId);
+  }
+}
+
+// Função para atualizar quantidade de um item
 async function updateItemQty(itemId, newQty) {
   try {
-    // Atualizar apenas a quantidade, mantendo os preços salvos
     const { error } = await currentSupabase
       .from('order_items')
       .update({ qty: newQty })
@@ -794,14 +804,12 @@ async function updateItemQty(itemId, newQty) {
       item.qty = newQty;
     }
     
-    // Renderizar novamente para atualizar subtotais
     renderItems();
     updateTotalsBoth();
-    console.log('✅ Quantidade atualizada:', { itemId, newQty });
     
   } catch (error) {
     console.error('Erro ao atualizar quantidade:', error);
-    throw error; // Re-throw para ser tratado pelo handleQtyChange
+    showAlert('Erro ao atualizar quantidade: ' + error.message);
   }
 }
 
@@ -1558,67 +1566,3 @@ async function init() {
           hideApproverModal();
         }
       });
-    }
-    
-    console.log('✅ Aplicação inicializada com sucesso');
-    
-  } catch (error) {
-    console.error('❌ Erro na inicialização:', error);
-    showErrorPage(
-      "Erro de Inicialização", 
-      "Ocorreu um erro ao carregar a aplicação. Tente recarregar a página ou entre em contato conosco.",
-      "⚠️"
-    );
-  }
-}
-
-// Configurar comportamento da barra flutuante
-function setupFloatingBar() {
-  const actionsBar = document.getElementById('actions-bar');
-  const mainActions = document.querySelector('.actions');
-  
-  if (!actionsBar || !mainActions) return;
-  
-  let isFloatingBarVisible = false;
-  
-  function updateFloatingBar() {
-    const mainActionsRect = mainActions.getBoundingClientRect();
-    const windowHeight = window.innerHeight;
-    
-    // Mostrar barra flutuante quando a seção de ações principais não estiver visível
-    const shouldShow = mainActionsRect.top > windowHeight || mainActionsRect.bottom < 0;
-    
-    if (shouldShow && !isFloatingBarVisible) {
-      actionsBar.classList.remove('hidden');
-      isFloatingBarVisible = true;
-    } else if (!shouldShow && isFloatingBarVisible) {
-      actionsBar.classList.add('hidden');
-      isFloatingBarVisible = false;
-    }
-  }
-  
-  // Configurar listener de scroll
-  let ticking = false;
-  function onScroll() {
-    if (!ticking) {
-      requestAnimationFrame(() => {
-        updateFloatingBar();
-        ticking = false;
-      });
-      ticking = true;
-    }
-  }
-  
-  window.addEventListener('scroll', onScroll);
-  window.addEventListener('resize', updateFloatingBar);
-  
-  // Verificação inicial
-  updateFloatingBar();
-}
-
-// Inicializar quando o DOM estiver pronto
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
