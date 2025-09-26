@@ -331,6 +331,112 @@ function hideProductSearchModal() {
   }
 }
 
+// Funções do modal de aprovador
+let approverData = null;
+
+function showApproverModal() {
+  const modal = document.getElementById('approver-modal');
+  const nameInput = document.getElementById('approver-name');
+  
+  if (modal) {
+    modal.style.display = 'flex';
+    if (nameInput) {
+      nameInput.focus();
+    }
+  }
+}
+
+function hideApproverModal() {
+  const modal = document.getElementById('approver-modal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+async function processApproval() {
+  try {
+    setSubmitting(true);
+    await saveChanges();
+    
+    // Coletar dados de conexão para auditoria
+    const connectionData = await collectConnectionData();
+    
+    // Enviar com dados do aprovador e conexão
+    await submitOrderWithApprover(approverData, connectionData);
+    showSuccessPage();
+  } catch(e) {
+    showAlert(e.message || String(e));
+  } finally {
+    setSubmitting(false);
+  }
+}
+
+async function collectConnectionData() {
+  const data = {
+    timestamp: new Date().toISOString(),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    language: navigator.language,
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    screen: {
+      width: screen.width,
+      height: screen.height,
+      colorDepth: screen.colorDepth,
+      pixelDepth: screen.pixelDepth
+    },
+    viewport: {
+      width: window.innerWidth,
+      height: window.innerHeight
+    },
+    url: window.location.href,
+    referrer: document.referrer || 'Direct access'
+  };
+  
+  // Adicionar informações de conexão se disponível
+  if ('connection' in navigator) {
+    data.connection = {
+      effectiveType: navigator.connection.effectiveType,
+      downlink: navigator.connection.downlink,
+      rtt: navigator.connection.rtt
+    };
+  }
+  
+  return data;
+}
+
+async function submitOrderWithApprover(approverData, connectionData) {
+  try {
+    const response = await fetch(`${cfg.FUNCTIONS_BASE}/submit-order`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cfg.SUPABASE_ANON}`
+      },
+      body: JSON.stringify({
+        session_id: session.id,
+        schema: schema,
+        approver: approverData,
+        connection_data: connectionData
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Erro ao aprovar orçamento');
+    }
+    
+    // Armazenar número do orçamento para mostrar na página de sucesso
+    window.lastOrderNumber = result.data?.order_number;
+    
+    console.log('✅ Orçamento aprovado com sucesso:', result);
+    
+  } catch (error) {
+    console.error('Erro ao aprovar orçamento:', error);
+    throw error;
+  }
+}
+
 async function handleProductSearch() {
   const searchInput = document.getElementById('product-search-input');
   const searchResults = document.getElementById('search-results');
@@ -552,113 +658,8 @@ async function addProductToOrder(productId, productName, unitPrice) {
 
 // Tornar a função disponível globalmente para uso no onclick
 window.addProductToOrder = addProductToOrder;
+
 async function handleQtyChange(event) {
-// Funções do modal de aprovador
-let approverData = null;
-
-function showApproverModal() {
-  const modal = document.getElementById('approver-modal');
-  const nameInput = document.getElementById('approver-name');
-  
-  if (modal) {
-    modal.style.display = 'flex';
-    if (nameInput) {
-      nameInput.focus();
-    }
-  }
-}
-
-function hideApproverModal() {
-  const modal = document.getElementById('approver-modal');
-  if (modal) {
-    modal.style.display = 'none';
-  }
-}
-
-async function processApproval() {
-  try {
-    setSubmitting(true);
-    await saveChanges();
-    
-    // Coletar dados de conexão para auditoria
-    const connectionData = await collectConnectionData();
-    
-    // Enviar com dados do aprovador e conexão
-    await submitOrderWithApprover(approverData, connectionData);
-    showSuccessPage();
-  } catch(e) {
-    showAlert(e.message || String(e));
-  } finally {
-    setSubmitting(false);
-  }
-}
-
-async function collectConnectionData() {
-  const data = {
-    timestamp: new Date().toISOString(),
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    language: navigator.language,
-    userAgent: navigator.userAgent,
-    platform: navigator.platform,
-    screen: {
-      width: screen.width,
-      height: screen.height,
-      colorDepth: screen.colorDepth,
-      pixelDepth: screen.pixelDepth
-    },
-    viewport: {
-      width: window.innerWidth,
-      height: window.innerHeight
-    },
-    url: window.location.href,
-    referrer: document.referrer || 'Direct access'
-  };
-  
-  // Adicionar informações de conexão se disponível
-  if ('connection' in navigator) {
-    data.connection = {
-      effectiveType: navigator.connection.effectiveType,
-      downlink: navigator.connection.downlink,
-      rtt: navigator.connection.rtt
-    };
-  }
-  
-  return data;
-}
-
-async function submitOrderWithApprover(approverData, connectionData) {
-  try {
-    const response = await fetch(`${cfg.FUNCTIONS_BASE}/submit-order`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${cfg.SUPABASE_ANON}`
-      },
-      body: JSON.stringify({
-        session_id: session.id,
-        schema: schema,
-        approver: approverData,
-        connection_data: connectionData
-      })
-    });
-    
-    const result = await response.json();
-    
-    if (!result.success) {
-      throw new Error(result.message || 'Erro ao aprovar orçamento');
-    }
-    
-    // Armazenar número do orçamento para mostrar na página de sucesso
-    window.lastOrderNumber = result.data?.order_number;
-    
-    console.log('✅ Orçamento aprovado com sucesso:', result);
-    
-  } catch (error) {
-    console.error('Erro ao aprovar orçamento:', error);
-    throw error;
-  }
-}
-
   const input = event.target;
   const itemId = parseInt(input.dataset.itemId);
   const newQty = parseInt(input.value) || 1;
