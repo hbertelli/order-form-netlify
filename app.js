@@ -774,48 +774,6 @@ async function addProductToOrder(productId, productName, unitPrice) {
 // Tornar a função disponível globalmente para uso no onclick
 window.addProductToOrder = addProductToOrder;
 
-async function updateItemQty(itemId, newQty) {
-  try {
-    console.log('🔍 Debug - Atualizando quantidade:', { itemId, newQty })
-    
-    // Buscar dados atuais do item (mantém preços salvos)
-    const { data: currentItem, error: fetchError } = await supabase
-      .from('order_items')
-      .select('product_id, unit_price, promo_price, original_price')
-      .eq('id', itemId)
-      .single()
-
-    if (fetchError || !currentItem) {
-      throw new Error('Item não encontrado')
-    }
-
-    // Usar preços já salvos no item (não recalcular)
-    const unitPrice = parseFloat(currentItem.unit_price || '0')
-
-    // Atualizar quantidade no banco
-    const { error: updateError } = await supabase
-      .from('order_items')
-      .update({ 
-        qty: newQty
-        // Mantém os preços originais salvos
-      })
-      .eq('id', itemId)
-
-    if (updateError) {
-      throw new Error(updateError.message)
-    }
-
-    console.log('✅ Quantidade atualizada com sucesso')
-    
-    // Recarregar itens para atualizar a interface
-    await loadItems(currentSessionId)
-    
-  } catch (error) {
-    console.error('❌ Erro ao atualizar quantidade:', error)
-    showAlert('Erro ao atualizar quantidade: ' + error.message)
-  }
-}
-
 async function handleQtyChange(event) {
   const input = event.target;
   const itemId = parseInt(input.dataset.itemId);
@@ -1327,8 +1285,9 @@ async function loadItems(){
         console.error('🔍 Debug - Erro ao buscar produtos de exemplo:', e);
       }
     }
-    
-    prods = prods.concat(data || []);
+    unit_price: unitPrice,      // Preço final usado
+    promo_price: promoPrice,    // Preço promocional
+    original_price: originalPrice // Preço original
   }
 
   console.log('🔍 Debug - Total de produtos encontrados:', prods.length);
