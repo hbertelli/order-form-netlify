@@ -1555,3 +1555,14 @@ async function init() {
     );
   }
 }
+
+// Inicializar aplicação quando DOM estiver pronto
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+// Funções globais para event handlers inline
+window.handleQtyChange = async function(itemId, newQty) {
+  try {
