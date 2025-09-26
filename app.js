@@ -642,8 +642,8 @@ async function handleProductSearch() {
         product.descricao;
       
       return `
-      return `
-        <div class="item-row" data-product-id="${item.product_id}">
+        <div class="item-row" data-product-id="${product.codprodfilho}">
+          <div class="product-info">
             <div class="product-name">${nameWithBadge}</div>
             <div class="product-code">Código: ${product.codprodfilho}</div>
           </div>
@@ -798,7 +798,7 @@ async function handleRemoveItem(itemId) {
     const item = items.find(it => it.id === itemId);
     const productName = item ? item.descricao : 'este produto';
     
-    if (confirm(`Tem certeza que deseja remover "${productName}" do orçamento?`)) {
+    if (confirm(\`Tem certeza que deseja remover "${productName}\" do orçamento?`)) {
       await removeItem(itemId);
     }
   } catch (error) {
@@ -1129,7 +1129,7 @@ function renderItems() {
     `;
     
     const nameWithBadge = hasPromotion ? 
-      `${item.descricao} <span class="promo-badge">Promoção</span>` : 
+      \`${item.descricao} <span class="promo-badge">Promoção</span>` : 
       item.descricao;
     
     return `
