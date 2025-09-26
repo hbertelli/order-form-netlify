@@ -1546,5 +1546,12 @@ async function init() {
         }
       });
     }
+  } catch (error) {
+    console.error('❌ Erro na inicialização:', error);
+    showErrorPage(
+      "Erro de Inicialização", 
+      "Ocorreu um erro ao carregar a aplicação. Tente recarregar a página.",
+      "⚠️"
+    );
   }
 }
