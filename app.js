@@ -469,7 +469,7 @@ async function addProductToOrder(productId, productName, unitPrice) {
       return;
     }
     
-    // Verificar se o produto já existe no pedido
+    // Verificar se o produto já existe no orçamento
     const existingItem = items.find(item => item.product_id == productId);
     
     if (existingItem) {
@@ -951,7 +951,7 @@ async function loadSession(){
   if (new Date(data.expires_at) < new Date()) {
     showErrorPage(
       "Link Expirado",
-      `Este link expirou em ${fmtDate(data.expires_at)}. Solicite um novo link de acesso para continuar com seu pedido.`,
+      `Este link expirou em ${fmtDate(data.expires_at)}. Solicite um novo link de acesso para continuar com seu orçamento.`,
       "⏰"
     );
     throw new Error("Sessão expirada.");
@@ -959,7 +959,7 @@ async function loadSession(){
   
   sessionInfo.textContent = `Expira em ${fmtDate(session.expires_at)}`;
   
-  // Atualizar título com número do pedido se disponível
+  // Atualizar título com número do orçamento se disponível
   const titleElement = document.querySelector('h1');
   if (session.estimated_order_number && titleElement) {
     titleElement.textContent = `📋 Revisar Orçamento #${session.estimated_order_number}`;
@@ -1245,7 +1245,7 @@ async function init() {
       return;
     }
     
-    // Carregar itens do pedido
+    // Carregar itens do orçamento
     await loadItems();
     
     // Renderizar interface
