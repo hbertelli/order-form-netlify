@@ -1284,9 +1284,9 @@ async function loadItems(){
       } catch (e) {
         console.error('🔍 Debug - Erro ao buscar produtos de exemplo:', e);
       }
-    }
-    
-    prods = prods.concat(data || []);
+    unit_price: unitPrice,      // Preço final usado
+    promo_price: promoPrice,    // Preço promocional
+    original_price: originalPrice // Preço original
   }
 
   console.log('🔍 Debug - Total de produtos encontrados:', prods.length);
