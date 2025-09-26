@@ -181,8 +181,10 @@ function showUsedSessionPage() {
     </div>
   `;
   
-  // Carregar dados do aprovador
-  loadApproverData();
+  // Carregar dados do aprovador após um pequeno delay para garantir que o DOM foi renderizado
+  setTimeout(() => {
+    loadApproverData();
+  }, 100);
 }
 
 window.showReadonlyOrder = async function() {
