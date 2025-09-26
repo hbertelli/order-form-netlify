@@ -1298,3 +1298,107 @@ input:focus-visible {
     grid-template-columns: 5fr 120px 140px 150px;
   }
 }
+
+/* Form styles for approver modal */
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: var(--spacing-sm);
+  font-size: 14px;
+}
+
+.form-group input {
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--spacing-md);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  font-size: 16px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.form-group input:invalid {
+  border-color: var(--danger);
+}
+
+.form-group input::placeholder {
+  color: var(--gray-400);
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--spacing);
+  justify-content: flex-end;
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--gray-200);
+}
+
+.btn-cancel {
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 1px solid var(--gray-200);
+  height: 48px;
+  padding: 0 var(--spacing-lg);
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background: var(--gray-200);
+  transform: translateY(-1px);
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, var(--success) 0%, #047857 100%);
+  color: white;
+  border: none;
+  height: 48px;
+  padding: 0 var(--spacing-xl);
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow);
+}
+
+.btn-confirm:hover {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Mobile adjustments for form */
+@media (max-width: 767px) {
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions button {
+    width: 100%;
+  }
+  
+  .form-group input {
+    font-size: 18px; /* Prevent zoom on iOS */
+  }
+}

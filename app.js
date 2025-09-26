@@ -1295,6 +1295,53 @@ async function init() {
       });
     }
     
+    // Configurar event listeners para modal de aprovador
+    const approverModal = document.getElementById('approver-modal');
+    const approverForm = document.getElementById('approver-form');
+    const cancelApproval = document.getElementById('cancel-approval');
+    
+    if (approverForm) {
+      approverForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(approverForm);
+        approverData = {
+          name: formData.get('name').trim(),
+          phone: formData.get('phone').trim(),
+          email: formData.get('email').trim()
+        };
+        
+        // Validar dados
+        if (!approverData.name || !approverData.phone || !approverData.email) {
+          alert('Por favor, preencha todos os campos obrigatórios.');
+          return;
+        }
+        
+        // Validar email básico
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(approverData.email)) {
+          alert('Por favor, digite um e-mail válido.');
+          return;
+        }
+        
+        hideApproverModal();
+        await processApproval();
+      });
+    }
+    
+    if (cancelApproval) {
+      cancelApproval.addEventListener('click', hideApproverModal);
+    }
+    
+    // Fechar modal do aprovador ao clicar fora
+    if (approverModal) {
+      approverModal.addEventListener('click', (e) => {
+        if (e.target === approverModal) {
+          hideApproverModal();
+        }
+      });
+    }
+    
     // Configurar controle de visibilidade das barras de ação
     window.addEventListener('scroll', updateActionBarsVisibility);
     window.addEventListener('resize', updateActionBarsVisibility);

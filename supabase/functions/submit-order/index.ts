@@ -32,13 +32,19 @@ Deno.serve(async (req: Request) => {
 
     // Extrair session_id do body da requisição
     let sessionId
+    let approverData = null
+    let connectionData = null
     
     try {
       const body = await req.json()
       sessionId = body.session_id
       requestSchema = body.schema || 'demo'
+      approverData = body.approver || null
+      connectionData = body.connection_data || null
       console.log('🔍 Submit-order - Session ID do body:', sessionId)
       console.log('🔍 Submit-order - Schema do body:', requestSchema)
+      console.log('🔍 Submit-order - Approver data:', approverData ? 'Presente' : 'Ausente')
+      console.log('🔍 Submit-order - Connection data:', connectionData ? 'Presente' : 'Ausente')
     } catch (error) {
       console.log('❌ Submit-order - Erro ao ler body:', error)
       return new Response(
@@ -247,6 +253,8 @@ Deno.serve(async (req: Request) => {
         uf: customer.uf,
         cep: customer.cep
       },
+      approver: approverData,
+      connection_data: connectionData,
       items: itensDetalhados,
       totals: {
         total_items: orderItems.length,
@@ -442,6 +450,27 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string, or
             <p><strong>CNPJ:</strong> ${orderPayload.customer.cnpj}</p>
             <p><strong>Endereço:</strong> ${orderPayload.customer.endereco}, ${orderPayload.customer.numero} - ${orderPayload.customer.bairro}, ${orderPayload.customer.cidade}/${orderPayload.customer.uf}</p>
           </div>
+          
+          ${orderPayload.approver ? `
+          <div class="customer-info">
+            <h3>✅ Dados do Aprovador</h3>
+            <p><strong>Nome:</strong> ${orderPayload.approver.name}</p>
+            <p><strong>Telefone:</strong> ${orderPayload.approver.phone}</p>
+            <p><strong>E-mail:</strong> ${orderPayload.approver.email}</p>
+          </div>
+          ` : ''}
+          
+          ${orderPayload.connection_data ? `
+          <div class="customer-info">
+            <h3>🔍 Dados de Auditoria</h3>
+            <p><strong>IP/Localização:</strong> ${orderPayload.connection_data.timezone}</p>
+            <p><strong>Navegador:</strong> ${orderPayload.connection_data.userAgent}</p>
+            <p><strong>Plataforma:</strong> ${orderPayload.connection_data.platform}</p>
+            <p><strong>Idioma:</strong> ${orderPayload.connection_data.language}</p>
+            <p><strong>Resolução:</strong> ${orderPayload.connection_data.screen.width}x${orderPayload.connection_data.screen.height}</p>
+            <p><strong>URL:</strong> ${orderPayload.connection_data.url}</p>
+          </div>
+          ` : ''}
           
           <h3>📦 Itens do Pedido</h3>
           <table class="items-table">
