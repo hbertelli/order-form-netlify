@@ -767,27 +767,6 @@ async function addProductToOrder(productId, qty = 1) {
   }
 }
 
-// Função global para lidar com mudança de quantidade
-function handleQtyChange(itemId, newQty) {
-  console.log('🔄 Alterando quantidade:', { itemId, newQty });
-  
-  if (newQty <= 0) {
-    alert('Quantidade deve ser maior que zero');
-    return;
-  }
-  
-  updateItemQty(itemId, newQty);
-}
-
-// Função global para remover item
-function handleRemoveItem(itemId) {
-  console.log('🗑️ Removendo item:', itemId);
-  
-  if (confirm('Tem certeza que deseja remover este item do orçamento?')) {
-    removeItem(itemId);
-  }
-}
-
 // Função para atualizar quantidade de um item
 async function updateItemQty(itemId, newQty) {
   try {
@@ -1566,3 +1545,6 @@ async function init() {
           hideApproverModal();
         }
       });
+    }
+  }
+}
