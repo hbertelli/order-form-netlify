@@ -1566,3 +1566,31 @@ if (document.readyState === 'loading') {
 // Funções globais para event handlers inline
 window.handleQtyChange = async function(itemId, newQty) {
   try {
+    const qty = parseInt(newQty);
+    if (qty <= 0) {
+      showAlert('Quantidade deve ser maior que zero');
+      return;
+    }
+    
+    console.log('🔄 Alterando quantidade:', { itemId, newQty: qty });
+    await updateItemQty(itemId, qty);
+  } catch (error) {
+    console.error('Erro ao alterar quantidade:', error);
+    showAlert('Erro ao alterar quantidade: ' + error.message);
+  }
+};
+
+window.handleRemoveItem = async function(itemId) {
+  try {
+    const item = items.find(it => it.id === itemId);
+    const productName = item ? item.descricao : 'este produto';
+    
+    if (confirm(`Tem certeza que deseja remover "${productName}" do orçamento?`)) {
+      console.log('🗑️ Removendo item:', itemId);
+      await removeItem(itemId);
+    }
+  } catch (error) {
+    console.error('Erro ao remover item:', error);
+    showAlert('Erro ao remover item: ' + error.message);
+  }
+};
