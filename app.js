@@ -1592,7 +1592,7 @@ async function init() {
 }
 
 // Inicializar aplicação quando DOM estiver pronto
-if (document.readyState === 'loading') {
+async function handleQtyChange(productId, newQty) {
   document.addEventListener('DOMContentLoaded', init);
 } else {
   init();
@@ -1604,10 +1604,14 @@ window.handleQtyChange = async function(itemId, newQty) {
     const qty = parseInt(newQty);
     if (qty <= 0) {
       showAlert('Quantidade deve ser maior que zero');
-      return;
+      await handleRemoveItem(productId);
     }
     
-    console.log('🔄 Alterando quantidade:', { itemId, newQty: qty });
+    const success = await updateItemQty(currentSession.id, productId, qty);
+    if (success) {
+      // Re-carrega os itens para atualizar a interface
+      await loadItems(currentSession.id);
+    }
     await updateItemQty(itemId, qty);
   } catch (error) {
     console.error('Erro ao alterar quantidade:', error);
@@ -1615,7 +1619,7 @@ window.handleQtyChange = async function(itemId, newQty) {
   }
 };
 
-window.handleRemoveItem = async function(itemId) {
+async function handleRemoveItem(productId) {
   try {
     const item = items.find(it => it.id === itemId);
     const productName = item ? item.descricao : 'este produto';
@@ -1625,7 +1629,11 @@ window.handleRemoveItem = async function(itemId) {
       await removeItem(itemId);
     }
   } catch (error) {
-    console.error('Erro ao remover item:', error);
+      const success = await removeItem(currentSession.id, productId);
+      if (success) {
+        // Re-carrega os itens para atualizar a interface
+        await loadItems(currentSession.id);
+      }
     showAlert('Erro ao remover item: ' + error.message);
   }
 };
