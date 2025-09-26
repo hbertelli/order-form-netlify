@@ -112,14 +112,14 @@ function showUsedSessionPage() {
           font-weight: 700;
           margin: 0 0 16px;
           color: var(--success);
-        ">Pedido Já Enviado</h1>
+        ">Orçamento Já Aprovado</h1>
         <p style="
           font-size: 16px;
           line-height: 1.6;
           margin: 0 0 24px;
           color: var(--gray-600);
         ">
-          Este pedido já foi enviado anteriormente e não pode mais ser editado.
+          Este orçamento já foi aprovado anteriormente e não pode mais ser editado.
         </p>
         <div style="
           background: var(--primary-light);
@@ -134,7 +134,7 @@ function showUsedSessionPage() {
             color: var(--primary);
             font-weight: 600;
           ">
-            💡 Você pode visualizar os detalhes do pedido abaixo
+            💡 Você pode visualizar os detalhes do orçamento abaixo
           </p>
         </div>
         <button onclick="window.showReadonlyOrder()" style="
@@ -148,7 +148,7 @@ function showUsedSessionPage() {
           margin-bottom: 16px;
           transition: all 0.2s ease;
         " onmouseover="this.style.background='var(--primary-hover)'" onmouseout="this.style.background='var(--primary)'">
-          👁️ Ver Pedido (Somente Leitura)
+          👁️ Ver Orçamento (Somente Leitura)
         </button>
         <br>
         <small style="
@@ -183,9 +183,9 @@ window.showReadonlyOrder = async function() {
     // Renderizar a interface em modo somente leitura
     document.body.innerHTML = `
       <header>
-        <h1>📋 Pedido Enviado ${session.estimated_order_number ? `#${session.estimated_order_number}` : ''}</h1>
+        <h1>📋 Orçamento Aprovado ${session.estimated_order_number ? `#${session.estimated_order_number}` : ''}</h1>
         <div id="customer-info" style="margin: 16px 0;"></div>
-        <p id="session-info">Pedido enviado em ${fmtDate(session.created_at)}</p>
+        <p id="session-info">Orçamento aprovado em ${fmtDate(session.created_at)}</p>
         <div style="
           background: rgba(255, 255, 255, 0.1);
           padding: 12px;
@@ -202,7 +202,7 @@ window.showReadonlyOrder = async function() {
       <main>
         <section id="items-section" class="card">
           <div class="card-header">
-            <h2>🛒 Itens do Pedido</h2>
+            <h2>🛒 Itens do Orçamento</h2>
           </div>
           <div id="items-list"></div>
         </section>
@@ -225,7 +225,7 @@ window.showReadonlyOrder = async function() {
       </main>
 
       <footer>
-        <small>🔒 Pedido já enviado - Visualização somente leitura</small>
+        <small>🔒 Orçamento já aprovado - Visualização somente leitura</small>
       </footer>
     `;
     
@@ -245,7 +245,7 @@ window.showReadonlyOrder = async function() {
     
   } catch (error) {
     console.error('Erro ao carregar visualização:', error);
-    alert('Erro ao carregar os dados do pedido: ' + error.message);
+    alert('Erro ao carregar os dados do orçamento: ' + error.message);
   }
 }
 
@@ -675,16 +675,16 @@ async function submitOrder() {
     const result = await response.json();
     
     if (!result.success) {
-      throw new Error(result.message || 'Erro ao enviar pedido');
+      throw new Error(result.message || 'Erro ao aprovar orçamento');
     }
     
-    // Armazenar número do pedido para mostrar na página de sucesso
+    // Armazenar número do orçamento para mostrar na página de sucesso
     window.lastOrderNumber = result.data?.order_number;
     
-    console.log('✅ Pedido enviado com sucesso:', result);
+    console.log('✅ Orçamento aprovado com sucesso:', result);
     
   } catch (error) {
-    console.error('Erro ao enviar pedido:', error);
+    console.error('Erro ao aprovar orçamento:', error);
     throw error;
   }
 }
@@ -772,9 +772,9 @@ let isSubmitting = false;
 
 function setSubmitting(on){
   isSubmitting = on;
-  const txt = on ? "🔄 Enviando..." : "🚀 Enviar Pedido";
+  const txt = on ? "🔄 Aprovando..." : "✅ Aprovar Orçamento";
   
-  // Atualiza todos os botões de envio
+  // Atualiza todos os botões de aprovação
   const mainSubmit = document.getElementById("main-submit-btn");
   const footerSubmit = document.getElementById("footer-submit-btn");
   
@@ -828,7 +828,7 @@ function showSuccessPage(){
           font-weight: 700;
           margin: 0 0 16px;
           color: var(--success);
-        ">Pedido Enviado com Sucesso!</h1>
+        ">Orçamento Aprovado com Sucesso!</h1>
         ${window.lastOrderNumber ? `
         <div style="
           background: var(--success-light);
@@ -842,7 +842,7 @@ function showSuccessPage(){
             font-weight: 700;
             margin: 0;
             color: var(--success);
-          ">Pedido Nº ${window.lastOrderNumber}</h2>
+          ">Orçamento Nº ${window.lastOrderNumber}</h2>
         </div>
         ` : ''}
         <p style="
@@ -851,7 +851,7 @@ function showSuccessPage(){
           margin: 0 0 24px;
           color: var(--gray-600);
         ">
-          Obrigado por enviar seu pedido! Em breve entraremos em contato 
+          Obrigado por aprovar seu orçamento! Em breve entraremos em contato 
           para confirmar os itens e definir a forma de pagamento.
         </p>
         <div style="
@@ -962,7 +962,7 @@ async function loadSession(){
   // Atualizar título com número do pedido se disponível
   const titleElement = document.querySelector('h1');
   if (session.estimated_order_number && titleElement) {
-    titleElement.textContent = `📋 Revisar Pedido #${session.estimated_order_number}`;
+    titleElement.textContent = `📋 Revisar Orçamento #${session.estimated_order_number}`;
   }
   
   // Buscar dados completos do cliente
