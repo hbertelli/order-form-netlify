@@ -1026,7 +1026,7 @@ function showAlert(message, type = 'info') {
   }
 }
 
-// Adicionar estilos para os diferentes tipos de alerta
+// Adicionar estilos para os diferentes tipos de alerta!
 const style = document.createElement('style');
 style.textContent = `
   .alert-success {
