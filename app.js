@@ -1036,11 +1036,13 @@ async function searchProducts() {
     
     if (isNumeric) {
       // Se for numérico, buscar por código exato ou descrição que contenha o termo
-      searchQuery = `or=(descricao.ilike.*${encodeURIComponent(query)}*,codprodfilho.eq.${encodeURIComponent(query)})`;
+      searchQuery = `or=(descricao.ilike.%25${encodeURIComponent(query)}%25,codprodfilho.eq.${encodeURIComponent(query)})`;
     } else {
       // Se não for numérico, buscar apenas na descrição!
-      searchQuery = `descricao.ilike.*${encodeURIComponent(query)}*`;
+      searchQuery = `descricao.ilike.%25${encodeURIComponent(query)}%25`;
     }
+    
+    console.log('🔍 Query construída:', searchQuery);
     
     const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/produtos_atacamax?${searchQuery}&ativo=eq.S&limit=20`, {
       headers: {
@@ -1052,6 +1054,8 @@ async function searchProducts() {
         'Accept-Profile': currentSession?.schema || 'demo'
       }
     });
+    
+    console.log('🔍 URL final:', `${window.APP_CONFIG.SUPABASE_URL}/rest/v1/produtos_atacamax?${searchQuery}&ativo=eq.S&limit=20`);
     
     if (!response.ok) {
       throw new Error(`Erro HTTP: ${response.status}`);
