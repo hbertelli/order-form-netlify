@@ -37,9 +37,10 @@ async function loadSession(token, schema = 'demo') {
     const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_sessions?id=eq.${token}&select=*`, {
       headers: {
         'apikey': window.APP_CONFIG.SUPABASE_ANON,
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-Client-Info': 'supabase-js-web'
       }
     });
     
@@ -92,8 +93,10 @@ async function loadCustomerData(customerId, schema = 'demo') {
     const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/clientes_atacamax?codpessoa=eq.${customerId}&select=*`, {
       headers: {
         'apikey': window.APP_CONFIG.SUPABASE_ANON,
+        'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-Client-Info': 'supabase-js-web'
       }
     });
     
@@ -157,8 +160,10 @@ async function loadOrderItems(sessionId, schema = 'demo') {
     const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_items?session_id=eq.${sessionId}&select=*`, {
       headers: {
         'apikey': window.APP_CONFIG.SUPABASE_ANON,
+        'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-Client-Info': 'supabase-js-web'
       }
     });
     
@@ -180,8 +185,10 @@ async function loadOrderItems(sessionId, schema = 'demo') {
     const productsResponse = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/produtos_atacamax?codprodfilho=in.(${productIds.join(',')})&select=*`, {
       headers: {
         'apikey': window.APP_CONFIG.SUPABASE_ANON,
+        'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-Client-Info': 'supabase-js-web'
       }
     });
     
@@ -513,9 +520,11 @@ async function saveOrder() {
         method: 'PATCH',
         headers: {
           'apikey': window.APP_CONFIG.SUPABASE_ANON,
+          'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Prefer': 'return=minimal'
+          'Prefer': 'return=minimal',
+          'X-Client-Info': 'supabase-js-web'
         },
         body: JSON.stringify({
           qty: update.qty
@@ -596,8 +605,10 @@ async function searchProducts() {
     const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/produtos_atacamax?or=(descricao.ilike.*${encodeURIComponent(query)}*,codprodfilho.ilike.*${encodeURIComponent(query)}*)&ativo=eq.S&limit=20`, {
       headers: {
         'apikey': window.APP_CONFIG.SUPABASE_ANON,
+        'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-Client-Info': 'supabase-js-web'
       }
     });
     
@@ -685,8 +696,10 @@ async function addProductToOrder(productId, qty = 1) {
     const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/produtos_atacamax?codprodfilho=eq.${productId}&select=*`, {
       headers: {
         'apikey': window.APP_CONFIG.SUPABASE_ANON,
+        'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-Client-Info': 'supabase-js-web'
       }
     });
     
@@ -711,9 +724,11 @@ async function addProductToOrder(productId, qty = 1) {
       method: 'POST',
       headers: {
         'apikey': window.APP_CONFIG.SUPABASE_ANON,
+        'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Prefer': 'return=representation'
+        'Prefer': 'return=representation',
+        'X-Client-Info': 'supabase-js-web'
       },
       body: JSON.stringify({
         session_id: currentSession.id,
