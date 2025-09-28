@@ -246,6 +246,9 @@ Deno.serve(async (req: Request) => {
 
     // Buscar preços atuais dos produtos
     const productIds = lastOrderProducts.map(p => p.codprodfilho)
+    
+    console.log('🔍 Debug - Product IDs from last order:', productIds)
+    
     const { data: currentProducts, error: productsError } = await supabase
       .from('produtos_atacamax')
       .select('codprodfilho, descricao, preco3, promo3, ativo')
@@ -253,6 +256,7 @@ Deno.serve(async (req: Request) => {
       .eq('ativo', 'S')
 
     if (productsError) {
+      console.log('❌ Debug - Products query error:', productsError)
       return new Response(
         JSON.stringify({ 
           success: false,
@@ -269,6 +273,9 @@ Deno.serve(async (req: Request) => {
       )
     }
 
+    console.log('🔍 Debug - Current products found:', currentProducts?.length || 0)
+    console.log('🔍 Debug - Current products:', currentProducts?.map(p => ({ id: p.codprodfilho, name: p.descricao })))
+    
     if (!currentProducts || currentProducts.length === 0) {
       return new Response(
         JSON.stringify({ 
@@ -338,7 +345,10 @@ Deno.serve(async (req: Request) => {
     const orderItems = lastOrderProducts
       .map(lastProduct => {
         const currentProduct = productsMap.get(lastProduct.codprodfilho)
-        if (!currentProduct) return null // Produto não está mais ativo
+        if (!currentProduct) {
+          console.log('⚠️ Debug - Product not found or inactive:', lastProduct.codprodfilho)
+          return null // Produto não está mais ativo
+        }
         
         // Calcular preços no momento da criação
         const originalPrice = parseFloat(currentProduct.preco3 || '0')
@@ -356,12 +366,22 @@ Deno.serve(async (req: Request) => {
       })
       .filter(Boolean) // Remove produtos nulos
 
+    console.log('🔍 Debug - Order items to create:', orderItems.length)
+    console.log('🔍 Debug - Order items details:', orderItems.map(item => ({ 
+      product_id: item.product_id, 
+      qty: item.qty,
+      unit_price: item.unit_price 
+    })))
+    
     if (orderItems.length > 0) {
       const { error: itemsError } = await supabase
         .from('order_items')
         .insert(orderItems)
 
       if (itemsError) {
+        console.log('❌ Debug - Items creation error:', itemsError)
+        console.log('❌ Debug - Failed items:', orderItems)
+        
         // Se falhar ao criar itens, remove a sessão criada
         await supabase.from('order_sessions').delete().eq('id', session.id)
         
@@ -371,7 +391,15 @@ Deno.serve(async (req: Request) => {
             error: 'ORDER_ITEMS_CREATION_FAILED',
             message: 'Erro ao criar itens do pedido',
             details: itemsError.message,
-            session_id: session.id
+            session_id: session.id,
+            debug_info: {
+              total_products_from_last_order: lastOrderProducts.length,
+              active_products_found: currentProducts.length,
+              items_to_create: orderItems.length,
+              product_ids_requested: productIds,
+              active_product_ids: currentProducts.map(p => p.codprodfilho),
+              missing_products: productIds.filter(id => !productsMap.has(id))
+            }
           }),
           {
             status: 200,
@@ -379,6 +407,8 @@ Deno.serve(async (req: Request) => {
           }
         )
       }
+    } else {
+      console.log('⚠️ Debug - No valid items to create')
     }
 
     // Usar o session_id diretamente como token
