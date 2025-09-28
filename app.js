@@ -511,6 +511,10 @@ function setupEventListeners() {
     }
   });
   
+  // Controlar visibilidade da barra flutuante baseado no scroll
+  window.addEventListener('scroll', handleScrollForActionsBar);
+  window.addEventListener('resize', handleScrollForActionsBar);
+  
   // Modal de busca de produtos
   const productSearchModal = document.getElementById('product-search-modal');
   const closeModalBtn = document.getElementById('close-modal-btn');
@@ -563,6 +567,29 @@ function setupEventListeners() {
   // Ocultar botões se readonly
   if (isReadonly) {
     hideEditButtons();
+  }
+}
+
+// Controlar visibilidade da barra flutuante
+function handleScrollForActionsBar() {
+  const actionsBar = document.getElementById('actions-bar');
+  const footer = document.querySelector('footer');
+  
+  if (!actionsBar || !footer) return;
+  
+  // Calcular se estamos próximos ao final da página
+  const windowHeight = window.innerHeight;
+  const documentHeight = document.documentElement.scrollHeight;
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  const footerRect = footer.getBoundingClientRect();
+  
+  // Se o footer está visível na tela, ocultar a barra flutuante
+  const isFooterVisible = footerRect.top < windowHeight;
+  
+  if (isFooterVisible) {
+    actionsBar.classList.add('hidden-at-bottom');
+  } else {
+    actionsBar.classList.remove('hidden-at-bottom');
   }
 }
 
@@ -703,6 +730,25 @@ async function saveOrder() {
   if (isReadonly) {
     showAlert('Não é possível salvar. Orçamento já foi aprovado.', 'error');
     return;
+  }
+  
+  // Identificar qual botão foi clicado para dar feedback visual
+  const clickedButton = event?.target;
+  const isFooterButton = clickedButton?.id === 'footer-save-btn';
+  
+  // Feedback visual no botão
+  if (clickedButton) {
+    const originalText = clickedButton.innerHTML;
+    clickedButton.innerHTML = '⏳ Salvando...';
+    clickedButton.disabled = true;
+    
+    // Restaurar botão após um tempo
+    setTimeout(() => {
+      if (clickedButton) {
+        clickedButton.innerHTML = originalText;
+        clickedButton.disabled = false;
+      }
+    }, 2000);
   }
   
   try {
@@ -893,9 +939,37 @@ async function saveOrder() {
     console.log('✅ Todos os itens foram salvos com sucesso');
     showAlert('Orçamento salvo com sucesso!', 'success');
     
+    // Feedback adicional no botão do rodapé
+    if (isFooterButton && clickedButton) {
+      clickedButton.innerHTML = '✅ Salvo!';
+      clickedButton.style.background = 'var(--success)';
+      clickedButton.style.color = 'white';
+      
+      setTimeout(() => {
+        clickedButton.innerHTML = '💾 <span class="btn-text">Salvar</span>';
+        clickedButton.style.background = '';
+        clickedButton.style.color = '';
+      }, 2000);
+    }
+    
   } catch (error) {
     console.error('❌ Erro ao salvar orçamento:', error);
     showAlert('Erro ao salvar orçamento. Tente novamente.', 'error');
+    
+    // Feedback de erro no botão
+    if (clickedButton) {
+      clickedButton.innerHTML = '❌ Erro';
+      clickedButton.style.background = 'var(--danger)';
+      clickedButton.style.color = 'white';
+      
+      setTimeout(() => {
+        clickedButton.innerHTML = clickedButton.id === 'footer-save-btn' ? 
+          '💾 <span class="btn-text">Salvar</span>' : '💾 <span class="btn-text">Salvar</span>';
+        clickedButton.style.background = '';
+        clickedButton.style.color = '';
+        clickedButton.disabled = false;
+      }, 2000);
+    }
   }
 }
 

@@ -968,6 +968,14 @@ footer {
   border-top: 1px solid var(--gray-200);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Ocultar barra flutuante quando próximo ao final da página */
+.actions-bar.hidden-at-bottom {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .actions-inner {
