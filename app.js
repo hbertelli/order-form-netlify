@@ -571,6 +571,8 @@ async function saveOrder() {
   try {
     console.log('💾 Iniciando salvamento do pedido...');
     console.log('📦 Itens atuais para salvar:', currentItems.length);
+    console.log('🔍 Schema atual:', currentSession?.schema || 'demo');
+    console.log('🔍 Session ID:', currentSession?.id);
     
     showAlert('Salvando pedido...', 'info');
     
@@ -590,6 +592,40 @@ async function saveOrder() {
       const update = updates[i];
       console.log(`💾 Salvando item ${i + 1}/${updates.length} - ID: ${update.id}, qty: ${update.qty}`);
       
+      // Primeiro, vamos tentar um GET para verificar se o item existe
+      console.log('🔍 Verificando se item existe...');
+      const checkUrl = `${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_items?id=eq.${update.id}&select=id,qty`;
+      const checkHeaders = {
+        'apikey': window.APP_CONFIG.SUPABASE_ANON,
+        'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Client-Info': 'supabase-js-web',
+        'Accept-Profile': currentSession?.schema || 'demo'
+      };
+      
+      const checkResponse = await fetch(checkUrl, {
+        method: 'GET',
+        headers: checkHeaders
+      });
+      
+      console.log('🔍 Check Response status:', checkResponse.status);
+      
+      if (checkResponse.ok) {
+        const checkData = await checkResponse.json();
+        console.log('🔍 Item existe no banco:', checkData);
+        
+        if (!checkData || checkData.length === 0) {
+          console.log('⚠️ Item não encontrado no GET, pulando...');
+          continue;
+        }
+      } else {
+        console.log('❌ Erro no GET de verificação:', checkResponse.status);
+        const checkError = await checkResponse.text();
+        console.log('❌ Erro detalhes:', checkError);
+        continue;
+      }
+      
       const patchUrl = `${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_items?id=eq.${update.id}`;
       const patchHeaders = {
         'apikey': window.APP_CONFIG.SUPABASE_ANON,
@@ -606,7 +642,7 @@ async function saveOrder() {
       console.log('🔍 PATCH Headers:', patchHeaders);
       console.log('🔍 PATCH Body:', patchBody);
       
-      const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_items?id=eq.${update.id}`, {
+      const response = await fetch(patchUrl, {
         method: 'PATCH',
         headers: patchHeaders,
         body: JSON.stringify(patchBody)
@@ -619,11 +655,58 @@ async function saveOrder() {
         const errorText = await response.text();
         console.log('🔍 PATCH Error response body:', errorText);
         
+        // Se PATCH falhou, vamos tentar PUT
+        console.log('🔄 PATCH falhou, tentando PUT...');
+        
+        const putResponse = await fetch(patchUrl, {
+          method: 'PUT',
+          headers: patchHeaders,
+          body: JSON.stringify(patchBody)
+        });
+        
+        console.log('🔍 PUT Response status:', putResponse.status);
+        
+        if (!putResponse.ok) {
+          const putError = await putResponse.text();
+          console.log('🔍 PUT Error response body:', putError);
+          
+          // Se PUT também falhou, vamos tentar POST (upsert)
+          console.log('🔄 PUT falhou, tentando POST (upsert)...');
+          
+          const postHeaders = {
+            ...patchHeaders,
+            'Prefer': 'resolution=merge-duplicates'
+          };
+          
+          const postBody = {
+            id: update.id,
+            session_id: currentSession.id,
+            qty: update.qty
+          };
+          
+          const postResponse = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_items`, {
+            method: 'POST',
+            headers: postHeaders,
+            body: JSON.stringify(postBody)
+          });
+          
+          console.log('🔍 POST Response status:', postResponse.status);
+          
+          if (!postResponse.ok) {
+            const postError = await postResponse.text();
+            console.log('🔍 POST Error response body:', postError);
+            
+            console.error(`❌ Erro ao salvar item ${update.id}:`, response.status, errorText);
+            throw new Error(`Erro ao salvar item ${update.id}: ${response.status} - ${errorText}`);
+          } else {
+            console.log(`✅ Item ${update.id} salvo via POST (upsert)`);
+          }
+        } else {
+          console.log(`✅ Item ${update.id} salvo via PUT`);
+        }
         console.error(`❌ Erro ao salvar item ${update.id}:`, response.status, response.statusText, errorText);
         throw new Error(`Erro ao salvar item ${update.id}: ${response.status} - ${errorText}`);
       }
-      
-      console.log(`✅ Item ${update.id} salvo com sucesso`);
     }
     
     console.log('✅ Todos os itens foram salvos com sucesso');
