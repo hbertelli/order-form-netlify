@@ -899,7 +899,7 @@ async function searchProducts() {
       // Se for numérico, buscar por código exato ou descrição que contenha o termo
       searchQuery = `or=(descricao.ilike.*${encodeURIComponent(query)}*,codprodfilho.eq.${encodeURIComponent(query)})`;
     } else {
-      // Se não for numérico, buscar apenas na descrição
+      // Se não for numérico, buscar apenas na descrição!
       searchQuery = `descricao.ilike.*${encodeURIComponent(query)}*`;
     }
     
