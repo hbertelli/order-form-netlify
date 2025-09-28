@@ -433,14 +433,14 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string, or
     <body>
       <div class="container">
         <div class="header">
-          <h1>🛒 Novo Pedido Recebido</h1>
-          <p>Pedido #${orderNumber}</p>
+          <h1>📋 Novo Orçamento Aprovado</h1>
+          <p>Orçamento #${orderNumber}</p>
         </div>
         
         <div class="content">
           <div class="order-link">
-            <p style="margin: 0 0 10px; font-size: 14px;">📋 Consultar Pedido Completo:</p>
-            <a href="${orderViewUrl}" target="_blank">Ver Detalhes do Pedido #${orderNumber}</a>
+            <p style="margin: 0 0 10px; font-size: 14px;">📋 Consultar Orçamento Completo:</p>
+            <a href="${orderViewUrl}" target="_blank">Ver Detalhes do Orçamento #${orderNumber}</a>
           </div>
           
           <div class="customer-info">
@@ -472,7 +472,7 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string, or
           </div>
           ` : ''}
           
-          <h3>📦 Itens do Pedido</h3>
+          <h3>📦 Itens do Orçamento</h3>
           <table class="items-table">
             <thead>
               <tr>
@@ -497,16 +497,16 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string, or
           </table>
           
           <div class="total">
-            <h3>💰 Total do Pedido: R$ ${orderPayload.totals.total_value.toFixed(2).replace('.', ',')}</h3>
+            <h3>💰 Total do Orçamento: R$ ${orderPayload.totals.total_value.toFixed(2).replace('.', ',')}</h3>
             <p>${orderPayload.totals.total_items} itens</p>
           </div>
         </div>
         
         <div class="footer">
-          <p>Pedido enviado em ${submittedAtBrasilia}</p>
-          <p>Sistema de Pedidos - Wise Sales</p>
+          <p>Orçamento aprovado em ${submittedAtBrasilia}</p>
+          <p>Sistema de Orçamentos - Wise Sales</p>
           <p style="margin-top: 10px; font-size: 11px; color: #9ca3af;">
-            💡 Clique no link acima para visualizar o pedido completo com todos os detalhes
+            💡 Clique no link acima para visualizar o orçamento completo com todos os detalhes
           </p>
         </div>
       </div>
@@ -515,9 +515,9 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string, or
   `
 
   const emailPayload = {
-    from: 'Sistema de Pedidos <onboarding@resend.dev>',
+    from: 'Sistema de Orçamentos <onboarding@resend.dev>',
     to: ['hilton.bertelli@wisesales.com.br'],
-    subject: `🛒 Pedido #${orderNumber} - ${orderPayload.customer.name} - R$ ${orderPayload.totals.total_value.toFixed(2).replace('.', ',')}`,
+    subject: `📋 Orçamento #${orderNumber} - ${orderPayload.customer.name} - R$ ${orderPayload.totals.total_value.toFixed(2).replace('.', ',')}`,
     html: emailHtml
   }
 
