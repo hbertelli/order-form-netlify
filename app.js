@@ -1030,21 +1030,19 @@ async function searchProducts() {
     
     console.log('🔍 Buscando produtos:', query);
     
-    // Construir query baseada no tipo de busca
-    let searchQuery;
-    const isNumeric = /^\d+$/.test(query.trim());
+    // Construir filtros obrigatórios
+    const filters = [
+      `descricao.ilike.*${encodeURIComponent(query)}*`,
+      'estoque.gt.0',
+      'preco3.gt.0',
+      'ativo.eq.S',
+      'grupo.not.in.(INATIVO,CONSUMO INTERNO)'
+    ];
     
-    if (isNumeric) {
-      // Se for numérico, buscar por código exato ou descrição que contenha o termo
-      searchQuery = `or=(descricao.ilike.%25${encodeURIComponent(query)}%25,codprodfilho.eq.${encodeURIComponent(query)})`;
-    } else {
-      // Se não for numérico, buscar apenas na descrição!
-      searchQuery = `descricao.ilike.%25${encodeURIComponent(query)}%25`;
-    }
+    const queryString = filters.join('&');
+    console.log('🔍 Query construída:', queryString);
     
-    console.log('🔍 Query construída:', searchQuery);
-    
-    const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/produtos_atacamax?${searchQuery}&ativo=eq.S&limit=20`, {
+    const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/produtos_atacamax?${queryString}&limit=20`, {
       headers: {
         'apikey': window.APP_CONFIG.SUPABASE_ANON,
         'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
@@ -1055,7 +1053,7 @@ async function searchProducts() {
       }
     });
     
-    console.log('🔍 URL final:', `${window.APP_CONFIG.SUPABASE_URL}/rest/v1/produtos_atacamax?${searchQuery}&ativo=eq.S&limit=20`);
+    console.log('🔍 URL final:', `${window.APP_CONFIG.SUPABASE_URL}/rest/v1/produtos_atacamax?${queryString}&limit=20`);
     
     if (!response.ok) {
       throw new Error(`Erro HTTP: ${response.status}`);
@@ -1072,7 +1070,7 @@ async function searchProducts() {
         <div class="search-empty">
           <div class="search-empty-icon">🔍</div>
           <p>Nenhum produto encontrado</p>
-          <small>Tente buscar por outro termo</small>
+          <small>Tente buscar por outro termo ou verifique se há produtos disponíveis</small>
         </div>
       `;
       return;
