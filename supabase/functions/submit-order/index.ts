@@ -460,18 +460,6 @@ async function sendOrderNotificationEmail(orderPayload: any, orderId: string, or
           </div>
           ` : ''}
           
-          ${orderPayload.connection_data ? `
-          <div class="customer-info">
-            <h3>🔍 Dados de Auditoria</h3>
-            <p><strong>IP/Localização:</strong> ${orderPayload.connection_data.timezone}</p>
-            <p><strong>Navegador:</strong> ${orderPayload.connection_data.userAgent}</p>
-            <p><strong>Plataforma:</strong> ${orderPayload.connection_data.platform}</p>
-            <p><strong>Idioma:</strong> ${orderPayload.connection_data.language}</p>
-            <p><strong>Resolução:</strong> ${orderPayload.connection_data.screen.width}x${orderPayload.connection_data.screen.height}</p>
-            <p><strong>URL:</strong> ${orderPayload.connection_data.url}</p>
-          </div>
-          ` : ''}
-          
           <h3>📦 Itens do Orçamento</h3>
           <table class="items-table">
             <thead>
