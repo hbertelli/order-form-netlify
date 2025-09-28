@@ -572,6 +572,53 @@ async function saveOrder() {
     console.log('💾 Iniciando salvamento do pedido...');
     console.log('📦 Itens atuais para salvar:', currentItems.length);
     
+    // Primeiro, vamos verificar se os itens ainda existem no banco
+    console.log('🔍 Verificando se os itens ainda existem no banco...');
+    const itemIds = currentItems.map(item => item.id);
+    console.log('🔍 IDs para verificar:', itemIds);
+    
+    const checkResponse = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_items?id=in.(${itemIds.join(',')})&select=id,qty`, {
+      headers: {
+        'apikey': window.APP_CONFIG.SUPABASE_ANON,
+        'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Client-Info': 'supabase-js-web',
+        'Accept-Profile': currentSession?.schema || 'demo'
+      }
+    });
+    
+    if (checkResponse.ok) {
+      const existingItems = await checkResponse.json();
+      console.log('🔍 Itens que ainda existem no banco:', existingItems);
+      console.log('🔍 Total de itens existentes:', existingItems.length);
+      
+      if (existingItems.length === 0) {
+        console.log('❌ Nenhum item existe mais no banco - recarregando da sessão...');
+        await loadOrderItems(currentSession.id, currentSession.schema || 'demo');
+        showAlert('Os itens foram recarregados do banco de dados.', 'info');
+        return;
+      }
+      
+      // Filtrar apenas itens que ainda existem
+      const existingIds = existingItems.map(item => String(item.id));
+      const itemsToSave = currentItems.filter(item => existingIds.includes(String(item.id)));
+      
+      if (itemsToSave.length !== currentItems.length) {
+        console.log('⚠️ Alguns itens não existem mais - atualizando lista local');
+        currentItems = itemsToSave;
+        renderItems();
+        updateOrderPreview();
+      }
+      
+      if (itemsToSave.length === 0) {
+        showAlert('Nenhum item válido para salvar.', 'error');
+        return;
+      }
+    } else {
+      console.log('❌ Erro ao verificar itens existentes:', checkResponse.status);
+    }
+    
     showAlert('Salvando pedido...', 'info');
     
     // Preparar dados para salvar - apenas itens que ainda existem
