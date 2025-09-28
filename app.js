@@ -237,13 +237,7 @@ async function loadOrderItems(sessionId, schema = 'demo') {
 function renderItems() {
   console.log('🎨 Renderizando itens...');
   console.log('📦 Total de itens:', currentItems.length);
-  console.log('📋 Itens atuais completos:', currentItems);
-  console.log('📋 IDs dos itens:', currentItems.map(item => ({ 
-    item_id: item.id, 
-    product_id: item.product_id, 
-    name: item.name,
-    qty: item.qty 
-  })));
+  console.log('📋 Itens atuais:', currentItems.map(item => ({ id: item.id, product_id: item.product_id, name: item.name })));
   
   const itemsList = document.getElementById('items-list');
   const emptyHint = document.getElementById('empty-hint');
@@ -278,7 +272,7 @@ function renderItems() {
               ${item.name}
               ${isPromotion ? '<span class="promo-badge">Promoção</span>' : ''}
             </div>
-            <div class="item-meta">Código: ${item.code} | ID: ${item.id}</div>
+            <div class="item-meta">Código: ${item.code} | Item ID: ${item.id} | Product ID: ${item.product_id}</div>
           </div>
           <div class="qty-display">${item.qty}</div>
           <div class="item-price ${isPromotion ? 'promotion' : ''}">
@@ -299,7 +293,7 @@ function renderItems() {
             ${item.name}
             ${isPromotion ? '<span class="promo-badge">Promoção</span>' : ''}
           </div>
-          <div class="item-meta">Código: ${item.code} | ID: ${item.id}</div>
+          <div class="item-meta">Código: ${item.code} | Item ID: ${item.id} | Product ID: ${item.product_id}</div>
         </div>
         <input type="number" class="qty-input" value="${item.qty}" min="1" step="1" data-id="${item.id}">
         <div class="item-price ${isPromotion ? 'promotion' : ''}">
@@ -500,8 +494,6 @@ function handleQuantityInput(e) {
 // Atualizar quantidade localmente (sem salvar no banco)
 function updateItemQuantityLocally(itemId, newQty) {
   console.log('🔄 Atualizando quantidade localmente:', itemId, newQty);
-  console.log('🔍 Procurando item com ID:', itemId, 'tipo:', typeof itemId);
-  console.log('🔍 IDs disponíveis:', currentItems.map(item => ({ id: item.id, tipo: typeof item.id })));
   
   const item = currentItems.find(item => item.id === itemId);
   if (item) {
@@ -1062,4 +1054,3 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
-  
