@@ -522,12 +522,26 @@ function updateItemQuantityLocally(itemId, newQty) {
 
 // Remover item
 function removeItem(itemId) {
-  if (isReadonly) return;
+  console.log('🗑️ Função removeItem chamada com ID:', itemId);
+  console.log('🗑️ Itens atuais antes da remoção:', currentItems.map(item => ({ id: item.id, name: item.name })));
+  
+  if (isReadonly) {
+    console.log('🔒 Modo readonly - remoção cancelada');
+    return;
+  }
   
   if (confirm('Tem certeza que deseja remover este item?')) {
+    console.log('✅ Usuário confirmou remoção');
+    const itemsBefore = currentItems.length;
     currentItems = currentItems.filter(item => item.id !== itemId);
+    const itemsAfter = currentItems.length;
+    console.log('📊 Itens antes:', itemsBefore, 'depois:', itemsAfter);
+    console.log('🗑️ Itens restantes:', currentItems.map(item => ({ id: item.id, name: item.name })));
     renderItems();
     updateOrderPreview();
+    console.log('✅ Remoção concluída');
+  } else {
+    console.log('❌ Usuário cancelou remoção');
   }
 }
 
@@ -955,88 +969,4 @@ async function submitOrder(e) {
 
 // Ocultar botões de edição
 function hideEditButtons() {
-  const buttonsToHide = [
-    'add-product-btn',
-    'main-add-product-btn',
-    'footer-add-product-btn',
-    'main-save-btn',
-    'footer-save-btn',
-    'main-submit-btn',
-    'footer-submit-btn'
-  ];
   
-  buttonsToHide.forEach(id => {
-    const btn = document.getElementById(id);
-    if (btn) {
-      btn.style.display = 'none';
-    }
-  });
-  
-  // Ocultar barra de ações flutuante
-  const actionsBar = document.getElementById('actions-bar');
-  if (actionsBar) {
-    actionsBar.style.display = 'none';
-  }
-}
-
-// Mostrar alerta
-function showAlert(message, type = 'info') {
-  const alertEl = document.getElementById('alert');
-  if (!alertEl) return;
-  
-  // Definir classes baseadas no tipo
-  let className = 'alert';
-  switch (type) {
-    case 'success':
-      className += ' alert-success';
-      break;
-    case 'error':
-      className += ' alert-error';
-      break;
-    case 'warning':
-      className += ' alert-warning';
-      break;
-    default:
-      className += ' alert-info';
-  }
-  
-  alertEl.className = className;
-  alertEl.textContent = message;
-  alertEl.style.display = 'block';
-  
-  // Auto-hide após 5 segundos para mensagens de sucesso/info
-  if (type === 'success' || type === 'info') {
-    setTimeout(() => {
-      alertEl.style.display = 'none';
-    }, 5000);
-  }
-}
-
-// Adicionar estilos para os diferentes tipos de alerta
-const style = document.createElement('style');
-style.textContent = `
-  .alert-success {
-    background: var(--success-light) !important;
-    color: var(--success) !important;
-    border-color: var(--success) !important;
-  }
-  
-  .alert-error {
-    background: var(--danger-light) !important;
-    color: var(--danger) !important;
-    border-color: var(--danger) !important;
-  }
-  
-  .alert-warning {
-    background: var(--warning-light) !important;
-    color: var(--warning) !important;
-    border-color: var(--warning) !important;
-  }
-  
-  .alert-info {
-    background: var(--primary-light) !important;
-    color: var(--primary) !important;
-    border-color: var(--primary) !important;
-  }
-`;
-document.head.appendChild(style);
