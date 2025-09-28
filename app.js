@@ -446,8 +446,12 @@ function setupEventListeners() {
 function handleDynamicClicks(e) {
   // Botão remover item
   if (e.target.classList.contains('btn-remove')) {
+    e.preventDefault();
+    e.stopPropagation();
     const itemId = e.target.dataset.id;
+    console.log('🗑️ Tentando remover item:', itemId);
     removeItem(itemId);
+    return;
   }
   
   // Botão adicionar produto ao pedido
@@ -472,10 +476,15 @@ function handleQuantityInput(e) {
 
 // Atualizar quantidade localmente (sem salvar no banco)
 function updateItemQuantityLocally(itemId, newQty) {
+  console.log('🔄 Atualizando quantidade localmente:', itemId, newQty);
+  
   const item = currentItems.find(item => item.id === itemId);
   if (item) {
+    console.log('📦 Item encontrado:', item.name, 'quantidade anterior:', item.qty);
     item.qty = newQty;
     item.subtotal = item.unit_price * newQty;
+    
+    console.log('💰 Novo subtotal:', item.subtotal);
     
     // Atualizar apenas o subtotal na interface
     const itemRow = document.querySelector(`[data-id="${itemId}"]`);
@@ -483,11 +492,14 @@ function updateItemQuantityLocally(itemId, newQty) {
       const subtotalEl = itemRow.querySelector('.item-subtotal');
       if (subtotalEl) {
         subtotalEl.textContent = `R$ ${item.subtotal.toFixed(2).replace('.', ',')}`;
+        console.log('✅ Subtotal atualizado na interface');
       }
     }
     
     updateTotals();
     updateOrderPreview();
+  } else {
+    console.error('❌ Item não encontrado:', itemId);
   }
 }
 
