@@ -569,16 +569,27 @@ async function saveOrder() {
   }
   
   try {
+    console.log('💾 Iniciando salvamento do pedido...');
+    console.log('📦 Itens atuais para salvar:', currentItems.length);
+    
     showAlert('Salvando pedido...', 'info');
     
-    // Preparar dados para salvar
-    const updates = currentItems.map(item => ({
-      id: item.id,
-      qty: item.qty
-    }));
+    // Preparar dados para salvar - apenas itens que ainda existem
+    const updates = currentItems.map(item => {
+      console.log('📝 Preparando para salvar item:', item.id, 'qty:', item.qty);
+      return {
+        id: item.id,
+        qty: item.qty
+      };
+    });
+    
+    console.log('💾 Total de itens para salvar:', updates.length);
     
     // Salvar cada item individualmente
-    for (const update of updates) {
+    for (let i = 0; i < updates.length; i++) {
+      const update = updates[i];
+      console.log(`💾 Salvando item ${i + 1}/${updates.length} - ID: ${update.id}, qty: ${update.qty}`);
+      
       const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_items?id=eq.${update.id}`, {
         method: 'PATCH',
         headers: {
@@ -596,10 +607,14 @@ async function saveOrder() {
       });
       
       if (!response.ok) {
+        console.error(`❌ Erro ao salvar item ${update.id}:`, response.status, response.statusText);
         throw new Error(`Erro ao salvar item ${update.id}: ${response.status}`);
       }
+      
+      console.log(`✅ Item ${update.id} salvo com sucesso`);
     }
     
+    console.log('✅ Todos os itens foram salvos com sucesso');
     showAlert('Pedido salvo com sucesso!', 'success');
     
   } catch (error) {
