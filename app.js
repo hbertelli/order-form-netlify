@@ -911,7 +911,6 @@ async function searchProducts() {
         'Accept': 'application/json',
         'X-Client-Info': 'supabase-js-web',
         'Accept-Profile': currentSession?.schema || 'demo'
-        'Accept-Profile': currentSession?.schema || 'demo'
       }
     });
     
