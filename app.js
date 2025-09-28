@@ -637,31 +637,43 @@ async function saveOrder() {
       const update = updates[i];
       console.log(`💾 Salvando item ${i + 1}/${updates.length} - ID: ${update.id}, qty: ${update.qty}`);
       
+      const patchUrl = `${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_items?id=eq.${update.id}`;
+      const patchHeaders = {
+        'apikey': window.APP_CONFIG.SUPABASE_ANON,
+        'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Prefer': 'return=minimal',
+        'X-Client-Info': 'supabase-js-web',
+        'Accept-Profile': currentSession?.schema || 'demo'
+      };
+      const patchBody = { qty: update.qty };
+      
+      console.log('🔍 PATCH URL:', patchUrl);
+      console.log('🔍 PATCH Headers:', patchHeaders);
+      console.log('🔍 PATCH Body:', patchBody);
+      
       const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_items?id=eq.${update.id}`, {
         method: 'PATCH',
-        headers: {
-          'apikey': window.APP_CONFIG.SUPABASE_ANON,
-          'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Prefer': 'return=minimal',
-          'X-Client-Info': 'supabase-js-web',
-          'Accept-Profile': currentSession?.schema || 'demo'
-        },
-        body: JSON.stringify({
-          qty: update.qty
-        })
+        headers: patchHeaders,
+        body: JSON.stringify(patchBody)
       });
       
+      console.log('🔍 PATCH Response status:', response.status);
+      console.log('🔍 PATCH Response headers:', Object.fromEntries(response.headers.entries()));
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.log('🔍 PATCH Error response body:', errorText);
+        
         if (response.status === 404) {
           console.warn(`⚠️ Item ${update.id} não existe mais no banco - removendo da lista local`);
           // Remover item da lista local se não existe mais no banco
           currentItems = currentItems.filter(item => String(item.id) !== String(update.id));
           continue; // Pular para o próximo item
         } else {
-          console.error(`❌ Erro ao salvar item ${update.id}:`, response.status, response.statusText);
-          throw new Error(`Erro ao salvar item ${update.id}: ${response.status}`);
+          console.error(`❌ Erro ao salvar item ${update.id}:`, response.status, response.statusText, errorText);
+          throw new Error(`Erro ao salvar item ${update.id}: ${response.status} - ${errorText}`);
         }
       }
       
