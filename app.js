@@ -212,6 +212,12 @@ async function loadOrderItems(sessionId, schema = 'demo') {
       const promoPrice = parseFloat(item.promo_price || product?.promo3 || '0');
       const unitPrice = parseFloat(item.unit_price || ((promoPrice > 0 && promoPrice < originalPrice) ? promoPrice : originalPrice));
       
+      console.log('🔍 Mapeando item:', {
+        database_id: item.id,
+        product_id: item.product_id,
+        product_name: product?.descricao
+      });
+      
       return {
         id: item.id,
         product_id: item.product_id,
@@ -237,7 +243,11 @@ async function loadOrderItems(sessionId, schema = 'demo') {
 function renderItems() {
   console.log('🎨 Renderizando itens...');
   console.log('📦 Total de itens:', currentItems.length);
-  console.log('📋 Itens atuais:', currentItems.map(item => ({ id: item.id, product_id: item.product_id, name: item.name })));
+  console.log('📋 Primeiros 3 itens:', currentItems.slice(0, 3).map(item => ({ 
+    id: item.id, 
+    product_id: item.product_id, 
+    name: item.name 
+  })));
   
   const itemsList = document.getElementById('items-list');
   const emptyHint = document.getElementById('empty-hint');
@@ -260,7 +270,7 @@ function renderItems() {
   if (emptyHint) emptyHint.style.display = 'none';
   
   itemsList.innerHTML = currentItems.map(item => {
-    console.log('🏷️ Renderizando item:', item.id, item.name);
+    console.log('🏷️ Renderizando item ID:', item.id, 'Product ID:', item.product_id, 'Nome:', item.name.substring(0, 30));
     
     const isPromotion = item.promo_price > 0 && item.promo_price < item.original_price;
     
