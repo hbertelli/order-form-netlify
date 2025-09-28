@@ -2,6 +2,7 @@
 let currentSession = null;
 let currentItems = [];
 let isReadonly = false;
+let approverData = null;
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', async () => {
@@ -101,7 +102,10 @@ async function loadSession(token, schema = 'demo') {
     // Verificar se a sessão já foi usada
     if (currentSession.used) {
       isReadonly = true;
-      console.log('🔒 Sessão já foi utilizada - modo somente leitura');
+      console.log('🔒 Sessão já foi utilizada - orçamento aprovado - modo somente leitura');
+      
+      // Tentar carregar dados do aprovador se existirem
+      await loadApproverData(currentSession.id, schema);
     }
     
     // Verificar se a sessão expirou
@@ -124,6 +128,67 @@ async function loadSession(token, schema = 'demo') {
     console.error('❌ Erro ao carregar sessão:', error);
     throw error;
   }
+}
+
+// Carregar dados do aprovador (se orçamento foi aprovado)
+async function loadApproverData(sessionId, schema = 'demo') {
+  try {
+    console.log('👤 Tentando carregar dados do aprovador...');
+    
+    const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/orders_submitted?session_id=eq.${sessionId}&select=payload`, {
+      headers: {
+        'apikey': window.APP_CONFIG.SUPABASE_ANON,
+        'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Client-Info': 'supabase-js-web',
+        'Accept-Profile': schema
+      }
+    });
+    
+    if (response.ok) {
+      const orders = await response.json();
+      if (orders && orders.length > 0 && orders[0].payload && orders[0].payload.approver) {
+        approverData = orders[0].payload.approver;
+        console.log('✅ Dados do aprovador carregados:', approverData);
+        updateApproverInfo();
+      }
+    }
+  } catch (error) {
+    console.log('⚠️ Não foi possível carregar dados do aprovador:', error);
+  }
+}
+
+// Atualizar informações do aprovador na interface
+function updateApproverInfo() {
+  if (!approverData) return;
+  
+  // Criar ou atualizar seção do aprovador
+  let approverInfoEl = document.getElementById('approver-info');
+  if (!approverInfoEl) {
+    approverInfoEl = document.createElement('div');
+    approverInfoEl.id = 'approver-info';
+    approverInfoEl.style.margin = '16px 0';
+    
+    // Inserir após customer-info
+    const customerInfo = document.getElementById('customer-info');
+    if (customerInfo && customerInfo.parentNode) {
+      customerInfo.parentNode.insertBefore(approverInfoEl, customerInfo.nextSibling);
+    }
+  }
+  
+  approverInfoEl.innerHTML = `
+    <div class="customer-header" style="background: rgba(5, 150, 105, 0.1); border: 1px solid rgba(5, 150, 105, 0.2);">
+      <div class="customer-main">
+        <div class="customer-code">✅ Orçamento Aprovado</div>
+        <div class="customer-name">${approverData.name}</div>
+      </div>
+      <div class="customer-details">
+        <div class="customer-cnpj">${approverData.phone}</div>
+        <div class="customer-address">${approverData.email}</div>
+      </div>
+    </div>
+  `;
 }
 
 // Carregar dados do cliente
@@ -385,14 +450,14 @@ function updateSessionInfo() {
   const hoursLeft = Math.max(0, Math.floor((expiresAt - now) / (1000 * 60 * 60)));
   
   if (isReadonly) {
-    sessionInfo.innerHTML = '🔒 Pedido já foi enviado (somente leitura)';
+    sessionInfo.innerHTML = '🔒 Orçamento já foi aprovado (somente leitura)';
     sessionInfo.style.color = '#dc2626';
   } else {
     sessionInfo.innerHTML = `⏰ Sessão expira em ${hoursLeft}h | 🔑 ID: ${currentSession.id.substring(0, 8)}...`;
   }
 }
 
-// Atualizar preview do pedido
+// Atualizar preview do orçamento
 function updateOrderPreview() {
   const orderPreview = document.getElementById('order-preview');
   if (!orderPreview || !currentSession) return;
@@ -401,7 +466,7 @@ function updateOrderPreview() {
   const total = currentItems.reduce((sum, item) => sum + item.subtotal, 0);
   
   if (currentSession.estimated_order_number) {
-    orderPreview.innerHTML = `📋 Pedido #${currentSession.estimated_order_number} • ${itemCount} itens • R$ ${total.toFixed(2).replace('.', ',')}`;
+    orderPreview.innerHTML = `📋 Orçamento #${currentSession.estimated_order_number} • ${itemCount} itens • R$ ${total.toFixed(2).replace('.', ',')}`;
   } else {
     orderPreview.innerHTML = `📋 ${itemCount} itens • R$ ${total.toFixed(2).replace('.', ',')}`;
   }
@@ -636,12 +701,12 @@ async function removeItem(itemId) {
 // Salvar pedido
 async function saveOrder() {
   if (isReadonly) {
-    showAlert('Não é possível salvar. Pedido já foi enviado.', 'error');
+    showAlert('Não é possível salvar. Orçamento já foi aprovado.', 'error');
     return;
   }
   
   try {
-    console.log('💾 Iniciando salvamento do pedido...');
+    console.log('💾 Iniciando salvamento do orçamento...');
     console.log('📦 Itens atuais para salvar:', currentItems.length);
     console.log('🔍 Schema atual:', currentSession?.schema || 'demo');
     console.log('🔍 Session ID:', currentSession?.id);
@@ -667,7 +732,7 @@ async function saveOrder() {
       console.log('🧪 GET Response error:', testError);
     }
     
-    showAlert('Salvando pedido...', 'info');
+    showAlert('Salvando orçamento...', 'info');
     
     // Preparar dados para salvar - apenas itens que ainda existem
     const updates = currentItems.map(item => {
@@ -826,11 +891,11 @@ async function saveOrder() {
     }
     
     console.log('✅ Todos os itens foram salvos com sucesso');
-    showAlert('Pedido salvo com sucesso!', 'success');
+    showAlert('Orçamento salvo com sucesso!', 'success');
     
   } catch (error) {
-    console.error('❌ Erro ao salvar pedido:', error);
-    showAlert('Erro ao salvar pedido. Tente novamente.', 'error');
+    console.error('❌ Erro ao salvar orçamento:', error);
+    showAlert('Erro ao salvar orçamento. Tente novamente.', 'error');
   }
 }
 
@@ -977,14 +1042,14 @@ async function searchProducts() {
   }
 }
 
-// Adicionar produto ao pedido
+// Adicionar produto ao orçamento
 async function addProductToOrder(productId, qty = 1) {
   if (isReadonly) return;
   
   try {
-    console.log('➕ Adicionando produto ao pedido:', productId, qty);
+    console.log('➕ Adicionando produto ao orçamento:', productId, qty);
     
-    // Verificar se o produto já existe no pedido
+    // Verificar se o produto já existe no orçamento
     const existingItem = currentItems.find(item => item.product_id === productId);
     if (existingItem) {
       // Se já existe, apenas aumentar a quantidade localmente
@@ -1079,12 +1144,12 @@ async function addProductToOrder(productId, qty = 1) {
 // Abrir modal de aprovação
 function openApproverModal() {
   if (isReadonly) {
-    showAlert('Pedido já foi enviado.', 'error');
+    showAlert('Orçamento já foi aprovado.', 'error');
     return;
   }
   
   if (currentItems.length === 0) {
-    showAlert('Adicione pelo menos um item ao pedido.', 'error');
+    showAlert('Adicione pelo menos um item ao orçamento.', 'error');
     return;
   }
   
@@ -1114,17 +1179,17 @@ function closeApproverModal() {
   }
 }
 
-// Enviar pedido
+// Enviar orçamento
 async function submitOrder(e) {
   e.preventDefault();
   
   if (isReadonly) {
-    showAlert('Pedido já foi enviado.', 'error');
+    showAlert('Orçamento já foi aprovado.', 'error');
     return;
   }
   
   if (currentItems.length === 0) {
-    showAlert('Adicione pelo menos um item ao pedido.', 'error');
+    showAlert('Adicione pelo menos um item ao orçamento.', 'error');
     return;
   }
   
@@ -1157,7 +1222,7 @@ async function submitOrder(e) {
       timestamp: new Date().toISOString()
     };
     
-    showAlert('Enviando pedido...', 'info');
+    showAlert('Enviando orçamento...', 'info');
     
     // Desabilitar botão de envio
     const submitBtn = document.getElementById('confirm-approval');
@@ -1194,6 +1259,9 @@ async function submitOrder(e) {
     
     console.log('✅ Pedido enviado com sucesso:', result);
     
+    // Salvar dados do aprovador localmente
+    approverData = approverData;
+    
     // Marcar como readonly
     isReadonly = true;
     currentSession.used = true;
@@ -1201,17 +1269,18 @@ async function submitOrder(e) {
     // Atualizar interface
     hideEditButtons();
     renderItems();
+    updateApproverInfo();
     updateSessionInfo();
     
     // Fechar modal
     closeApproverModal();
     
     // Mostrar sucesso
-    showAlert(`Pedido #${result.data.order_number} enviado com sucesso! 🎉`, 'success');
+    showAlert(`Orçamento #${result.data.order_number} aprovado com sucesso! 🎉`, 'success');
     
   } catch (error) {
-    console.error('❌ Erro ao enviar pedido:', error);
-    showAlert(`Erro ao enviar pedido: ${error.message}`, 'error');
+    console.error('❌ Erro ao aprovar orçamento:', error);
+    showAlert(`Erro ao aprovar orçamento: ${error.message}`, 'error');
     
     // Reabilitar botão
     const submitBtn = document.getElementById('confirm-approval');
