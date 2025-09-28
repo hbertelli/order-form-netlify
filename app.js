@@ -237,6 +237,7 @@ async function loadOrderItems(sessionId, schema = 'demo') {
 function renderItems() {
   console.log('🎨 Renderizando itens...');
   console.log('📦 Total de itens:', currentItems.length);
+  console.log('📋 Itens atuais:', currentItems.map(item => ({ id: item.id, product_id: item.product_id, name: item.name })));
   
   const itemsList = document.getElementById('items-list');
   const emptyHint = document.getElementById('empty-hint');
@@ -271,7 +272,7 @@ function renderItems() {
               ${item.name}
               ${isPromotion ? '<span class="promo-badge">Promoção</span>' : ''}
             </div>
-            <div class="item-meta">Código: ${item.code}</div>
+            <div class="item-meta">Código: ${item.code} | ID: ${item.id}</div>
           </div>
           <div class="qty-display">${item.qty}</div>
           <div class="item-price ${isPromotion ? 'promotion' : ''}">
@@ -292,7 +293,7 @@ function renderItems() {
             ${item.name}
             ${isPromotion ? '<span class="promo-badge">Promoção</span>' : ''}
           </div>
-          <div class="item-meta">Código: ${item.code}</div>
+          <div class="item-meta">Código: ${item.code} | ID: ${item.id}</div>
         </div>
         <input type="number" class="qty-input" value="${item.qty}" min="1" step="1" data-id="${item.id}">
         <div class="item-price ${isPromotion ? 'promotion' : ''}">
@@ -456,12 +457,16 @@ function setupEventListeners() {
 
 // Manipular cliques dinâmicos
 function handleDynamicClicks(e) {
+  console.log('🖱️ Clique detectado:', e.target.className, e.target.dataset);
+  
   // Botão remover item
   if (e.target.classList.contains('btn-remove')) {
     e.preventDefault();
     e.stopPropagation();
     const itemId = e.target.dataset.id;
     console.log('🗑️ Tentando remover item:', itemId);
+    console.log('🗑️ Elemento clicado:', e.target);
+    console.log('🗑️ Dataset completo:', e.target.dataset);
     removeItem(itemId);
     return;
   }
