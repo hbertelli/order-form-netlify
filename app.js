@@ -570,7 +570,7 @@ function updateItemQuantityLocally(itemId, newQty) {
 }
 
 // Remover item
-function removeItem(itemId) {
+async function removeItem(itemId) {
   console.log('🗑️ Função removeItem chamada com ID:', itemId);
   console.log('🗑️ Itens atuais antes da remoção:', currentItems.map(item => ({ id: item.id, name: item.name.substring(0, 30) })));
   
@@ -581,21 +581,53 @@ function removeItem(itemId) {
   
   if (confirm('Tem certeza que deseja remover este item?')) {
     console.log('✅ Usuário confirmou remoção');
-    const itemsBefore = currentItems.length;
-    // Converter para string para comparação
-    currentItems = currentItems.filter(item => String(item.id) !== String(itemId));
-    const itemsAfter = currentItems.length;
-    console.log('📊 Itens antes:', itemsBefore, 'depois:', itemsAfter);
-    console.log('🗑️ Itens restantes:', currentItems.map(item => ({ id: item.id, name: item.name.substring(0, 30) })));
     
-    // Re-renderizar a lista de itens
-    console.log('🎨 Re-renderizando itens após remoção...');
-    renderItems();
-    updateOrderPreview();
-    
-    // Mostrar mensagem de sucesso
-    showAlert('Item removido com sucesso!', 'success');
-    console.log('✅ Remoção concluída');
+    try {
+      // Primeiro, deletar do banco de dados
+      console.log('🗑️ Deletando item do banco de dados...');
+      const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_items?id=eq.${itemId}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': window.APP_CONFIG.SUPABASE_ANON,
+          'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Client-Info': 'supabase-js-web',
+          'Accept-Profile': currentSession?.schema || 'demo',
+          'Content-Profile': currentSession?.schema || 'demo'
+        }
+      });
+      
+      console.log('🗑️ DELETE Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('🗑️ DELETE Error response body:', errorText);
+        throw new Error(`Erro ao deletar item: ${response.status} - ${errorText}`);
+      }
+      
+      console.log('✅ Item deletado do banco de dados com sucesso');
+      
+      // Agora remover da lista local
+      const itemsBefore = currentItems.length;
+      currentItems = currentItems.filter(item => String(item.id) !== String(itemId));
+      const itemsAfter = currentItems.length;
+      console.log('📊 Itens antes:', itemsBefore, 'depois:', itemsAfter);
+      console.log('🗑️ Itens restantes:', currentItems.map(item => ({ id: item.id, name: item.name.substring(0, 30) })));
+      
+      // Re-renderizar a lista de itens
+      console.log('🎨 Re-renderizando itens após remoção...');
+      renderItems();
+      updateOrderPreview();
+      
+      // Mostrar mensagem de sucesso
+      showAlert('Item removido com sucesso!', 'success');
+      console.log('✅ Remoção concluída');
+      
+    } catch (error) {
+      console.error('❌ Erro ao remover item:', error);
+      showAlert(`Erro ao remover item: ${error.message}`, 'error');
+    }
   } else {
     console.log('❌ Usuário cancelou remoção');
   }
