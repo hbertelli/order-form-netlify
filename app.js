@@ -1336,7 +1336,7 @@ async function submitOrder(e) {
     console.log('✅ Pedido enviado com sucesso:', result);
     
     // Salvar dados do aprovador localmente
-    approverData = approverData;
+    window.approverData = approverData;
     
     // Marcar como readonly
     isReadonly = true;
