@@ -235,21 +235,32 @@ async function loadOrderItems(sessionId, schema = 'demo') {
 
 // Renderizar lista de itens
 function renderItems() {
+  console.log('🎨 Renderizando itens...');
+  console.log('📦 Total de itens:', currentItems.length);
+  
   const itemsList = document.getElementById('items-list');
   const emptyHint = document.getElementById('empty-hint');
   
-  if (!itemsList) return;
+  if (!itemsList) {
+    console.error('❌ Elemento items-list não encontrado');
+    return;
+  }
   
   if (currentItems.length === 0) {
+    console.log('📭 Nenhum item para renderizar');
     itemsList.innerHTML = '';
     if (emptyHint) emptyHint.style.display = 'block';
     updateTotals();
     return;
   }
   
+  console.log('📝 Renderizando', currentItems.length, 'itens');
+  
   if (emptyHint) emptyHint.style.display = 'none';
   
   itemsList.innerHTML = currentItems.map(item => {
+    console.log('🏷️ Renderizando item:', item.id, item.name);
+    
     const isPromotion = item.promo_price > 0 && item.promo_price < item.original_price;
     
     if (isReadonly) {
@@ -296,6 +307,7 @@ function renderItems() {
     `;
   }).join('');
   
+  console.log('✅ Itens renderizados com sucesso');
   updateTotals();
 }
 
