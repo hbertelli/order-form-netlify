@@ -646,7 +646,6 @@ async function saveOrder() {
         'Prefer': 'return=minimal',
         'X-Client-Info': 'supabase-js-web',
         'Accept-Profile': currentSession?.schema || 'demo'
-        'Accept-Profile': currentSession?.schema || 'demo'
       };
       const patchBody = { qty: update.qty };
       
