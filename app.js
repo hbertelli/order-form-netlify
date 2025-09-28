@@ -607,12 +607,23 @@ async function saveOrder() {
       });
       
       if (!response.ok) {
-        console.error(`❌ Erro ao salvar item ${update.id}:`, response.status, response.statusText);
-        throw new Error(`Erro ao salvar item ${update.id}: ${response.status}`);
+        if (response.status === 404) {
+          console.warn(`⚠️ Item ${update.id} não existe mais no banco - removendo da lista local`);
+          // Remover item da lista local se não existe mais no banco
+          currentItems = currentItems.filter(item => String(item.id) !== String(update.id));
+          continue; // Pular para o próximo item
+        } else {
+          console.error(`❌ Erro ao salvar item ${update.id}:`, response.status, response.statusText);
+          throw new Error(`Erro ao salvar item ${update.id}: ${response.status}`);
+        }
       }
       
       console.log(`✅ Item ${update.id} salvo com sucesso`);
     }
+    
+    // Re-renderizar se algum item foi removido
+    renderItems();
+    updateOrderPreview();
     
     console.log('✅ Todos os itens foram salvos com sucesso');
     showAlert('Pedido salvo com sucesso!', 'success');
