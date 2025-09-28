@@ -212,11 +212,7 @@ async function loadOrderItems(sessionId, schema = 'demo') {
       const promoPrice = parseFloat(item.promo_price || product?.promo3 || '0');
       const unitPrice = parseFloat(item.unit_price || ((promoPrice > 0 && promoPrice < originalPrice) ? promoPrice : originalPrice));
       
-      console.log('🔍 Mapeando item:', {
-        database_id: item.id,
-        product_id: item.product_id,
-        product_name: product?.descricao
-      });
+      console.log('🔍 Mapeando item - DB ID:', item.id, 'Product ID:', item.product_id, 'Nome:', product?.descricao?.substring(0, 30));
       
       return {
         id: item.id,
@@ -270,7 +266,7 @@ function renderItems() {
   if (emptyHint) emptyHint.style.display = 'none';
   
   itemsList.innerHTML = currentItems.map(item => {
-    console.log('🏷️ Renderizando item ID:', item.id, 'Product ID:', item.product_id, 'Nome:', item.name.substring(0, 30));
+    console.log('🏷️ Renderizando item - ID:', item.id, 'Product ID:', item.product_id, 'Nome:', item.name.substring(0, 30));
     
     const isPromotion = item.promo_price > 0 && item.promo_price < item.original_price;
     
@@ -503,18 +499,20 @@ function handleQuantityInput(e) {
 
 // Atualizar quantidade localmente (sem salvar no banco)
 function updateItemQuantityLocally(itemId, newQty) {
-  console.log('🔄 Atualizando quantidade localmente:', itemId, newQty);
+  console.log('🔄 Atualizando quantidade localmente - ID procurado:', itemId, 'Nova qty:', newQty);
+  console.log('🔍 IDs disponíveis nos currentItems:', currentItems.map(item => ({ id: item.id, product_id: item.product_id })));
   
-  const item = currentItems.find(item => item.id === itemId);
+  // Converter para string para comparação, pois data-id sempre vem como string
+  const item = currentItems.find(item => String(item.id) === String(itemId));
   if (item) {
-    console.log('📦 Item encontrado:', item.name, 'quantidade anterior:', item.qty);
+    console.log('✅ Item encontrado:', item.name.substring(0, 30), 'quantidade anterior:', item.qty);
     item.qty = newQty;
     item.subtotal = item.unit_price * newQty;
     
     console.log('💰 Novo subtotal:', item.subtotal);
     
     // Atualizar apenas o subtotal na interface
-    const itemRow = document.querySelector(`[data-id="${itemId}"]`);
+    const itemRow = document.querySelector(`.item-row[data-id="${itemId}"]`);
     if (itemRow) {
       const subtotalEl = itemRow.querySelector('.item-subtotal');
       if (subtotalEl) {
@@ -526,14 +524,15 @@ function updateItemQuantityLocally(itemId, newQty) {
     updateTotals();
     updateOrderPreview();
   } else {
-    console.error('❌ Item não encontrado:', itemId);
+    console.error('❌ Item não encontrado - ID procurado:', itemId, 'Tipo:', typeof itemId);
+    console.error('❌ IDs disponíveis:', currentItems.map(item => ({ id: item.id, tipo: typeof item.id })));
   }
 }
 
 // Remover item
 function removeItem(itemId) {
   console.log('🗑️ Função removeItem chamada com ID:', itemId);
-  console.log('🗑️ Itens atuais antes da remoção:', currentItems.map(item => ({ id: item.id, name: item.name })));
+  console.log('🗑️ Itens atuais antes da remoção:', currentItems.map(item => ({ id: item.id, name: item.name.substring(0, 30) })));
   
   if (isReadonly) {
     console.log('🔒 Modo readonly - remoção cancelada');
@@ -543,10 +542,11 @@ function removeItem(itemId) {
   if (confirm('Tem certeza que deseja remover este item?')) {
     console.log('✅ Usuário confirmou remoção');
     const itemsBefore = currentItems.length;
-    currentItems = currentItems.filter(item => item.id !== itemId);
+    // Converter para string para comparação
+    currentItems = currentItems.filter(item => String(item.id) !== String(itemId));
     const itemsAfter = currentItems.length;
     console.log('📊 Itens antes:', itemsBefore, 'depois:', itemsAfter);
-    console.log('🗑️ Itens restantes:', currentItems.map(item => ({ id: item.id, name: item.name })));
+    console.log('🗑️ Itens restantes:', currentItems.map(item => ({ id: item.id, name: item.name.substring(0, 30) })));
     renderItems();
     updateOrderPreview();
     console.log('✅ Remoção concluída');
