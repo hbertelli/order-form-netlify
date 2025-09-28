@@ -695,7 +695,8 @@ async function saveOrder() {
         'Accept': 'application/json',
         'Prefer': 'return=minimal',
         'X-Client-Info': 'supabase-js-web',
-        'Accept-Profile': currentSession?.schema || 'demo'
+        'Accept-Profile': currentSession?.schema || 'demo',
+        'Content-Profile': currentSession?.schema || 'demo'
       };
       const patchBody = { qty: update.qty };
       
@@ -757,7 +758,8 @@ async function saveOrder() {
           
           const postHeaders = {
             ...patchHeaders,
-            'Prefer': 'resolution=merge-duplicates'
+            'Prefer': 'resolution=merge-duplicates',
+            'Content-Profile': currentSession?.schema || 'demo'
           };
           
           const postBody = {
@@ -987,7 +989,8 @@ async function addProductToOrder(productId, qty = 1) {
         'Accept': 'application/json',
         'Prefer': 'return=representation',
         'X-Client-Info': 'supabase-js-web',
-        'Accept-Profile': currentSession?.schema || 'demo'
+        'Accept-Profile': currentSession?.schema || 'demo',
+        'Content-Profile': currentSession?.schema || 'demo'
       },
       body: JSON.stringify({
         session_id: currentSession.id,
