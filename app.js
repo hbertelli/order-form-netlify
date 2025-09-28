@@ -237,7 +237,13 @@ async function loadOrderItems(sessionId, schema = 'demo') {
 function renderItems() {
   console.log('🎨 Renderizando itens...');
   console.log('📦 Total de itens:', currentItems.length);
-  console.log('📋 Itens atuais:', currentItems.map(item => ({ id: item.id, product_id: item.product_id, name: item.name })));
+  console.log('📋 Itens atuais completos:', currentItems);
+  console.log('📋 IDs dos itens:', currentItems.map(item => ({ 
+    item_id: item.id, 
+    product_id: item.product_id, 
+    name: item.name,
+    qty: item.qty 
+  })));
   
   const itemsList = document.getElementById('items-list');
   const emptyHint = document.getElementById('empty-hint');
@@ -494,6 +500,8 @@ function handleQuantityInput(e) {
 // Atualizar quantidade localmente (sem salvar no banco)
 function updateItemQuantityLocally(itemId, newQty) {
   console.log('🔄 Atualizando quantidade localmente:', itemId, newQty);
+  console.log('🔍 Procurando item com ID:', itemId, 'tipo:', typeof itemId);
+  console.log('🔍 IDs disponíveis:', currentItems.map(item => ({ id: item.id, tipo: typeof item.id })));
   
   const item = currentItems.find(item => item.id === itemId);
   if (item) {
