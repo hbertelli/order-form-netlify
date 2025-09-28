@@ -1171,6 +1171,7 @@ async function submitOrder(e) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
       },
       body: JSON.stringify({
         session_id: currentSession.id,
