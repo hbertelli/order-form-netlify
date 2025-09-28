@@ -547,8 +547,14 @@ function removeItem(itemId) {
     const itemsAfter = currentItems.length;
     console.log('📊 Itens antes:', itemsBefore, 'depois:', itemsAfter);
     console.log('🗑️ Itens restantes:', currentItems.map(item => ({ id: item.id, name: item.name.substring(0, 30) })));
+    
+    // Re-renderizar a lista de itens
+    console.log('🎨 Re-renderizando itens após remoção...');
     renderItems();
     updateOrderPreview();
+    
+    // Mostrar mensagem de sucesso
+    showAlert('Item removido com sucesso!', 'success');
     console.log('✅ Remoção concluída');
   } else {
     console.log('❌ Usuário cancelou remoção');
