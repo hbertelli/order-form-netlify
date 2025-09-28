@@ -20,8 +20,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('🔑 Token encontrado:', token);
   console.log('🗄️ Schema:', schema);
   
+  // Verificar se o schema funciona
+  const workingSchema = await detectWorkingSchema(token, schema);
+  console.log('✅ Schema funcionando:', workingSchema);
+  
   try {
-    await loadSession(token, schema);
+    await loadSession(token, workingSchema);
     setupEventListeners();
   } catch (error) {
     console.error('❌ Erro ao carregar sessão:', error);
@@ -29,6 +33,42 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+// Detectar qual schema realmente funciona
+async function detectWorkingSchema(token, preferredSchema) {
+  const schemasToTest = [preferredSchema, 'public', 'demo'];
+  
+  for (const schema of schemasToTest) {
+    console.log('🔍 Testando schema:', schema);
+    
+    try {
+      const response = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_sessions?id=eq.${token}&select=id&limit=1`, {
+        headers: {
+          'apikey': window.APP_CONFIG.SUPABASE_ANON,
+          'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Client-Info': 'supabase-js-web',
+          'Accept-Profile': schema
+        }
+      });
+      
+      console.log('🔍 Schema', schema, 'response:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          console.log('✅ Schema', schema, 'funciona!');
+          return schema;
+        }
+      }
+    } catch (error) {
+      console.log('❌ Schema', schema, 'erro:', error.message);
+    }
+  }
+  
+  console.log('⚠️ Nenhum schema funcionou, usando padrão:', preferredSchema);
+  return preferredSchema;
+}
 // Carregar dados da sessão
 async function loadSession(token, schema = 'demo') {
   try {
