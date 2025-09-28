@@ -614,6 +614,27 @@ async function saveOrder() {
     console.log('🔍 Schema atual:', currentSession?.schema || 'demo');
     console.log('🔍 Session ID:', currentSession?.id);
     
+    // TESTE: Vamos comparar fazendo um GET primeiro para ver se funciona
+    console.log('🧪 TESTE: Fazendo GET para comparar headers...');
+    const testGetResponse = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_items?session_id=eq.${currentSession.id}&select=id,qty&limit=1`, {
+      headers: {
+        'apikey': window.APP_CONFIG.SUPABASE_ANON,
+        'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Client-Info': 'supabase-js-web',
+        'Accept-Profile': currentSession?.schema || 'demo'
+      }
+    });
+    console.log('🧪 GET Response status:', testGetResponse.status);
+    if (testGetResponse.ok) {
+      const testData = await testGetResponse.json();
+      console.log('🧪 GET Response data:', testData);
+    } else {
+      const testError = await testGetResponse.text();
+      console.log('🧪 GET Response error:', testError);
+    }
+    
     showAlert('Salvando pedido...', 'info');
     
     // Preparar dados para salvar - apenas itens que ainda existem
@@ -681,6 +702,27 @@ async function saveOrder() {
       console.log('🔍 PATCH URL:', patchUrl);
       console.log('🔍 PATCH Headers:', patchHeaders);
       console.log('🔍 PATCH Body:', patchBody);
+      
+      // TESTE: Vamos tentar um GET específico para este item primeiro
+      console.log('🧪 TESTE: GET específico para item', update.id);
+      const specificGetResponse = await fetch(`${window.APP_CONFIG.SUPABASE_URL}/rest/v1/order_items?id=eq.${update.id}&select=id,qty`, {
+        headers: {
+          'apikey': window.APP_CONFIG.SUPABASE_ANON,
+          'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Client-Info': 'supabase-js-web',
+          'Accept-Profile': currentSession?.schema || 'demo'
+        }
+      });
+      console.log('🧪 GET específico status:', specificGetResponse.status);
+      if (specificGetResponse.ok) {
+        const specificData = await specificGetResponse.json();
+        console.log('🧪 GET específico data:', specificData);
+      } else {
+        const specificError = await specificGetResponse.text();
+        console.log('🧪 GET específico error:', specificError);
+      }
       
       const response = await fetch(patchUrl, {
         method: 'PATCH',
