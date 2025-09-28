@@ -40,7 +40,8 @@ async function loadSession(token, schema = 'demo') {
         'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Client-Info': 'supabase-js-web'
+        'X-Client-Info': 'supabase-js-web',
+        'Accept-Profile': schema
       }
     });
     
@@ -96,7 +97,8 @@ async function loadCustomerData(customerId, schema = 'demo') {
         'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Client-Info': 'supabase-js-web'
+        'X-Client-Info': 'supabase-js-web',
+        'Accept-Profile': schema
       }
     });
     
@@ -163,7 +165,8 @@ async function loadOrderItems(sessionId, schema = 'demo') {
         'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Client-Info': 'supabase-js-web'
+        'X-Client-Info': 'supabase-js-web',
+        'Accept-Profile': schema
       }
     });
     
@@ -188,7 +191,8 @@ async function loadOrderItems(sessionId, schema = 'demo') {
         'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Client-Info': 'supabase-js-web'
+        'X-Client-Info': 'supabase-js-web',
+        'Accept-Profile': schema
       }
     });
     
@@ -524,7 +528,8 @@ async function saveOrder() {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Prefer': 'return=minimal',
-          'X-Client-Info': 'supabase-js-web'
+          'X-Client-Info': 'supabase-js-web',
+          'Accept-Profile': currentSession?.schema || 'demo'
         },
         body: JSON.stringify({
           qty: update.qty
@@ -608,7 +613,8 @@ async function searchProducts() {
         'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Client-Info': 'supabase-js-web'
+        'X-Client-Info': 'supabase-js-web',
+        'Accept-Profile': currentSession?.schema || 'demo'
       }
     });
     
@@ -699,7 +705,8 @@ async function addProductToOrder(productId, qty = 1) {
         'Authorization': `Bearer ${window.APP_CONFIG.SUPABASE_ANON}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Client-Info': 'supabase-js-web'
+        'X-Client-Info': 'supabase-js-web',
+        'Accept-Profile': currentSession?.schema || 'demo'
       }
     });
     
@@ -728,7 +735,8 @@ async function addProductToOrder(productId, qty = 1) {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Prefer': 'return=representation',
-        'X-Client-Info': 'supabase-js-web'
+        'X-Client-Info': 'supabase-js-web',
+        'Accept-Profile': currentSession?.schema || 'demo'
       },
       body: JSON.stringify({
         session_id: currentSession.id,
