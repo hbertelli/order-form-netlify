@@ -1032,11 +1032,11 @@ async function searchProducts() {
     
     // Construir filtros obrigatórios
     const filters = [
-      `descricao.ilike.*${encodeURIComponent(query)}*`,
-      'estoque.gt.0',
-      'preco3.gt.0',
-      'ativo.eq.S',
-      'grupo.not.in.(INATIVO,CONSUMO INTERNO)'
+      `estoque=gt.0`,
+      `preco3=gt.0`, 
+      `ativo=eq.S`,
+      `grupo=not.in.(INATIVO,"CONSUMO INTERNO")`,
+      `descricao=ilike.*${query}*`
     ];
     
     const queryString = filters.join('&');
