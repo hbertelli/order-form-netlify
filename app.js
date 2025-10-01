@@ -383,7 +383,7 @@ function renderItems() {
               ${item.name}
               ${isPromotion ? '<span class="promo-badge">Promoção</span>' : ''}
             </div>
-            <div class="item-meta">Código: ${item.code} | Item ID: ${item.id} | Product ID: ${item.product_id}</div>
+            <div class="item-meta">Código: ${item.code}</div>
           </div>
           <div class="qty-display">${item.qty}</div>
           <div class="item-price ${isPromotion ? 'promotion' : ''}">
