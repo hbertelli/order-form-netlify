@@ -404,7 +404,7 @@ function renderItems() {
             ${item.name}
             ${isPromotion ? '<span class="promo-badge">Promoção</span>' : ''}
           </div>
-          <div class="item-meta">Código: ${item.code} | Item ID: ${item.id} | Product ID: ${item.product_id}</div>
+          <div class="item-meta">Código: ${item.code}</div>
         </div>
         <input type="number" class="qty-input" value="${item.qty}" min="1" step="1" data-id="${item.id}">
         <div class="item-price ${isPromotion ? 'promotion' : ''}">
